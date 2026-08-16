@@ -1,11 +1,300 @@
 ---
-import Welcome from '../components/Welcome.astro';
 import Layout from '../layouts/Layout.astro';
 
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+const benefits = [
+  { icon: 'ph-clock-countdown', title: 'We arrive on time', text: 'Clear arrival windows and real updates from your local crew.' },
+  { icon: 'ph-receipt', title: 'Up-front pricing', text: 'Know the full scope and price before any roofing work begins.' },
+  { icon: 'ph-shield-check', title: 'Built right, first time', text: 'Detail-led workmanship backed by a written protection plan.' },
+  { icon: 'ph-cloud-lightning', title: 'Fast storm response', text: 'Urgent tarping and leak control when bad weather hits.' },
+];
+
+const services = [
+  { icon: 'ph-hammer', title: 'Roof repairs', text: 'Leaks, flashing, storm damage and missing shingles.', position: 'left' },
+  { icon: 'ph-magnifying-glass', title: 'Roof inspections', text: 'Photo-documented checks and honest repair advice.', position: 'center', featured: true },
+  { icon: 'ph-house-line', title: 'Roof replacement', text: 'Complete, code-compliant reroofing built to last.', position: 'right' },
+];
+
+const testimonials = [
+  { quote: 'Crestline found the leak two other companies missed. The repair was neat, the price matched the quote, and our home was spotless afterward.', name: 'Monica R.', area: 'North Hills' },
+  { quote: 'From the inspection to the final magnet sweep, the team communicated brilliantly. Our new roof looks fantastic and feels ready for anything.', name: 'Daniel K.', area: 'Brookside' },
+  { quote: 'A storm peeled shingles off overnight. Crestline had the roof protected that morning and completed the permanent repair two days later.', name: 'Avery T.', area: 'Riverside' },
+];
+
+const areas = ['North Hills', 'Brookside', 'Riverside', 'Eastgate', 'Westfield', 'Lakeview', 'Oak Ridge', 'Cedar Park'];
 ---
 
 <Layout>
-	<Welcome />
+  <header class="site-header" id="top">
+    <div class="topbar shell">
+      <a class="brand" href="#top" aria-label="Crestline Roofing home">
+        <img src="/assets/crestline-logo.png" alt="Crestline Roofing — Repair, Replace, Protect" width="430" height="161" />
+      </a>
+      <a class="phone-lockup header-phone" href="tel:+18005550198" aria-label="Call Crestline Roofing at (800) 555-0198">
+        <span class="phone-icon"><i class="ph-fill ph-phone-call" aria-hidden="true"></i></span>
+        <span class="phone-copy"><small>Book Same-Day Service</small><strong>Call (800) 555-0198</strong></span>
+      </a>
+      <a class="button button-gold header-cta" href="#callback">Book a roof check</a>
+      <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Open menu">
+        <i class="ph ph-list" aria-hidden="true"></i>
+      </button>
+    </div>
+
+    <nav class="nav-shell shell" id="site-nav" aria-label="Primary navigation">
+      <ul class="nav-inner">
+        <li><a class="active" href="#top" aria-current="page">Home</a></li>
+        <li><a href="#about">About</a></li>
+        <li><a href="#services">Our Services</a></li>
+        <li><a href="#process">Our Process</a></li>
+        <li><a href="#areas">Service Areas</a></li>
+        <li><a href="#reviews">Reviews</a></li>
+        <li><a href="#callback">Contact Us</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main id="main-content">
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero-shade"></div>
+      <div class="shell hero-inner">
+        <div class="hero-copy">
+          <p class="eyebrow">Local roofers. Lasting protection.</p>
+          <h1 id="hero-title"><span>Fixed today.</span><strong>Not next storm.</strong></h1>
+          <p>Responsive roof repair and replacement from licensed professionals who respect your time, home, and budget.</p>
+          <div class="hero-actions">
+            <a class="phone-lockup light" href="tel:+18005550198">
+              <span class="phone-icon"><i class="ph ph-phone-call" aria-hidden="true"></i></span>
+              <span><small>Talk with a local roofer</small><strong>(800) 555-0198</strong></span>
+            </a>
+            <a class="button button-gold" href="#callback">Get my free inspection</a>
+          </div>
+          <ul class="hero-proof" aria-label="Service assurances">
+            <li><i class="ph-fill ph-seal-check" aria-hidden="true"></i> Licensed & insured</li>
+            <li><i class="ph-fill ph-star" aria-hidden="true"></i> 4.9 homeowner rating</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="benefits angled-bottom" aria-labelledby="benefits-title">
+      <div class="shell section-stack">
+        <div class="section-heading navy">
+          <span>Why choose us</span>
+          <h2 id="benefits-title">The Crestline promise</h2>
+        </div>
+        <div class="benefit-grid">
+          {benefits.map((item) => (
+            <article class="benefit-card">
+              <div class="icon-medallion"><i class={`ph ${item.icon}`} aria-hidden="true"></i></div>
+              <h3>{item.title}</h3>
+              <p>{item.text}</p>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <section class="services" id="services" aria-labelledby="services-title">
+      <div class="shell section-stack">
+        <div class="section-heading light">
+          <span>What we do</span>
+          <h2 id="services-title">Roofing services</h2>
+        </div>
+        <div class="service-grid">
+          {services.map((service) => (
+            <article class:list={['service-card', { featured: service.featured }]}>
+              <div class={`service-image ${service.position}`} role="img" aria-label={`${service.title} professional roofing work`}></div>
+              <div class="service-card-body">
+                <div class="service-icon"><i class={`ph ${service.icon}`} aria-hidden="true"></i></div>
+                <h3>{service.title}</h3>
+                <p>{service.text}</p>
+                <a href="#callback" aria-label={`Ask about ${service.title}`}>Learn more <i class="ph ph-arrow-right" aria-hidden="true"></i></a>
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <section class="emergency-strip shell" aria-label="Emergency roof repair call to action">
+      <div class="emergency-copy">
+        <p class="kicker">Storm damage or active leak?</p>
+        <h2>Need it fixed today?</h2>
+        <p>Speak directly with a local roofing expert—no waiting, no runaround.</p>
+        <div class="compact-actions">
+          <a class="phone-lockup" href="tel:+18005550198">
+            <span class="phone-icon"><i class="ph ph-phone-call" aria-hidden="true"></i></span>
+            <span><small>Rapid response line</small><strong>(800) 555-0198</strong></span>
+          </a>
+          <a class="button button-gold" href="#callback">Book online</a>
+        </div>
+      </div>
+      <div class="emergency-photo" role="img" aria-label="Crestline Roofing service fleet ready for dispatch"></div>
+    </section>
+
+    <section class="trust shell" aria-labelledby="trust-title">
+      <p id="trust-title">Partnerships & certifications</p>
+      <div class="trust-row">
+        <div><i class="ph ph-medal" aria-hidden="true"></i><span><strong>RoofSafe</strong> Master Installer</span></div>
+        <div><i class="ph ph-shield-checkered" aria-hidden="true"></i><span><strong>ShieldSelect</strong> Certified</span></div>
+        <div><i class="ph ph-hard-hat" aria-hidden="true"></i><span><strong>Safety First</strong> Worksite Partner</span></div>
+        <div><i class="ph ph-heart" aria-hidden="true"></i><span><strong>Homes United</strong> Local Supporter</span></div>
+      </div>
+    </section>
+
+    <section class="process angled-bottom" id="process" aria-labelledby="process-title">
+      <div class="shell section-stack">
+        <div class="section-heading navy">
+          <span>Our process</span>
+          <h2 id="process-title">How it works</h2>
+        </div>
+        <div class="process-line" aria-hidden="true"></div>
+        <div class="process-grid">
+          <article><div class="process-icon"><i class="ph ph-calendar-check" aria-hidden="true"></i></div><h3>Call or book online</h3><p>Tell us what your roof needs.</p></article>
+          <article class="featured"><div class="process-icon"><i class="ph ph-camera" aria-hidden="true"></i></div><h3>We inspect & explain</h3><p>See the issue and your options clearly.</p></article>
+          <article><div class="process-icon"><i class="ph ph-hammer" aria-hidden="true"></i></div><h3>We fix it properly</h3><p>Built right and cleaned up fully.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="testimonials" id="reviews" aria-labelledby="reviews-title">
+      <div class="shell section-stack">
+        <div class="section-heading light">
+          <span>Homeowners say it best</span>
+          <h2 id="reviews-title">Protected homes. Happy clients.</h2>
+        </div>
+        <div class="testimonial-stage">
+          <button class="review-arrow prev" type="button" aria-label="Previous testimonial"><i class="ph ph-caret-left" aria-hidden="true"></i></button>
+          <div class="testimonial-grid" aria-live="polite">
+            {testimonials.map((item, index) => (
+              <blockquote class:list={['testimonial-card', { active: index === 0 }]} data-review={index}>
+                <div class="quote-mark"><i class="ph-fill ph-quotes" aria-hidden="true"></i></div>
+                <p>“{item.quote}”</p>
+                <div class="stars" aria-label="5 out of 5 stars">★★★★★</div>
+                <footer><strong>{item.name}</strong><span>{item.area}</span></footer>
+              </blockquote>
+            ))}
+          </div>
+          <button class="review-arrow next" type="button" aria-label="Next testimonial"><i class="ph ph-caret-right" aria-hidden="true"></i></button>
+        </div>
+      </div>
+    </section>
+
+    <section class="fleet-showcase" aria-label="Crestline Roofing service vehicles">
+      <div class="fleet-shade"></div>
+      <div class="shell fleet-copy" aria-hidden="true"></div>
+    </section>
+
+    <section class="local-banner" id="areas" aria-labelledby="local-title">
+      <div class="local-photo" role="img" aria-label="Crestline roofer standing beside a residential roof project"></div>
+      <div class="local-copy">
+        <p class="kicker light-kicker">Your neighborhood roofing team</p>
+        <h2 id="local-title">Crestline is local to you</h2>
+        <p>Our crews live and work across the metro area, with stocked vehicles ready for inspections, repairs, and storm response.</p>
+        <div class="area-columns">{areas.map((area) => <span><i class="ph-fill ph-map-pin" aria-hidden="true"></i>{area}</span>)}</div>
+      </div>
+    </section>
+
+    <section class="about shell" id="about" aria-labelledby="about-title">
+      <div class="about-photo" role="img" aria-label="Roofing professionals carefully installing a residential roof"></div>
+      <div class="about-copy">
+        <p class="script-label">About us</p>
+        <h2 id="about-title">Roofing without the runaround</h2>
+        <p class="lead">We started Crestline because homeowners deserved a roofer who calls back, shows up, and stands behind the work.</p>
+        <p>From pinpoint repairs to complete replacement, our team combines clear recommendations, careful protection of your property, and documentation at every stage. You always know what is happening above your head.</p>
+        <div class="compact-actions">
+          <a class="phone-lockup" href="tel:+18005550198"><span class="phone-icon"><i class="ph ph-phone-call" aria-hidden="true"></i></span><span><small>Speak with our team</small><strong>(800) 555-0198</strong></span></a>
+          <a class="button button-navy" href="#process">Our process</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="emergency-strip second-cta shell" aria-label="Schedule a roofing inspection">
+      <div class="emergency-copy">
+        <p class="kicker">A stronger roof starts here.</p><h2>Get an expert roof check</h2><p>Photo-documented advice, clear choices, and no high-pressure sales pitch.</p>
+        <div class="compact-actions">
+          <a class="phone-lockup" href="tel:+18005550198"><span class="phone-icon"><i class="ph ph-phone-call" aria-hidden="true"></i></span><span><small>Free inspection line</small><strong>(800) 555-0198</strong></span></a>
+          <a class="button button-gold" href="#callback">Choose a time</a>
+        </div>
+      </div>
+      <div class="emergency-photo" role="img" aria-label="Crestline service vehicles outside a family home"></div>
+    </section>
+
+    <section class="service-map" aria-labelledby="map-title">
+      <div class="shell map-grid">
+        <div class="map-copy">
+          <p class="script-label">Proudly local</p><h2 id="map-title">Roofers near you</h2><p>We serve homeowners throughout the greater metro, including:</p>
+          <ul>{areas.slice(0, 6).map((area) => <li><i class="ph-fill ph-map-pin" aria-hidden="true"></i>{area}</li>)}</ul>
+          <div class="map-pins" aria-hidden="true">
+            <span style="--x: 18%; --y: 26%"><i class="ph-fill ph-map-pin"></i></span>
+            <span style="--x: 43%; --y: 43%"><i class="ph-fill ph-map-pin"></i></span>
+            <span style="--x: 22%; --y: 68%"><i class="ph-fill ph-map-pin"></i></span>
+          </div>
+        </div>
+
+        <form class="callback-card" id="callback" novalidate>
+          <div class="form-header"><p>Need roofing help?</p><h2>Get a call back</h2></div>
+          <div class="form-body">
+            <label for="name">Name</label><input id="name" name="name" autocomplete="name" required placeholder="Your name" />
+            <label for="phone">Phone number</label><input id="phone" name="phone" autocomplete="tel" inputmode="tel" required placeholder="(555) 000-0000" />
+            <label for="email">Email address</label><input id="email" name="email" type="email" autocomplete="email" required placeholder="you@example.com" />
+            <label for="message">How can we help?</label><textarea id="message" name="message" rows="4" required placeholder="Tell us about your roof"></textarea>
+            <button class="button button-gold submit-button" type="submit">Request my callback</button>
+            <p class="form-note">By submitting, you agree to be contacted about your request.</p><p class="form-status" role="status" aria-live="polite"></p>
+          </div>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="shell footer-grid">
+      <div class="footer-brand">
+        <img src="/assets/crestline-logo.png" alt="Crestline Roofing" width="430" height="161" />
+        <a class="phone-lockup light" href="tel:+18005550198"><span class="phone-icon"><i class="ph ph-phone-call" aria-hidden="true"></i></span><span><small>Roofing help is one call away</small><strong>(800) 555-0198</strong></span></a>
+      </div>
+      <div class="footer-links"><h2>Useful information</h2><div><a href="#top">Home</a><a href="#about">About</a><a href="#services">Roof repair</a><a href="#services">Replacement</a><a href="#process">Our process</a><a href="#areas">Service areas</a><a href="#reviews">Reviews</a><a href="#callback">Contact</a></div></div>
+      <form class="newsletter"><h2>Roof care notes</h2><p>Seasonal tips, no spam.</p><label class="sr-only" for="newsletter-email">Email address</label><input id="newsletter-email" type="email" required placeholder="Email address" /><button class="button button-gold" type="submit">Subscribe</button><p class="newsletter-status" role="status" aria-live="polite"></p></form>
+    </div>
+    <div class="footer-bottom shell"><span>© 2026 Crestline Roofing. All rights reserved.</span><span><a href="#">Privacy policy</a> · <a href="#">Terms</a></span></div>
+  </footer>
+
+  <script>
+    const toggle = document.querySelector('.menu-toggle');
+    const nav = document.querySelector('#site-nav');
+    toggle?.addEventListener('click', () => {
+      const open = toggle.getAttribute('aria-expanded') === 'true';
+      toggle.setAttribute('aria-expanded', String(!open));
+      toggle.setAttribute('aria-label', open ? 'Open menu' : 'Close menu');
+      nav?.classList.toggle('open', !open);
+    });
+    nav?.querySelectorAll('a').forEach((link) => link.addEventListener('click', () => { toggle?.setAttribute('aria-expanded', 'false'); nav.classList.remove('open'); }));
+
+    const reviewCards = Array.from(document.querySelectorAll<HTMLElement>('[data-review]'));
+    let activeReview = 0;
+    const showReview = (index: number) => {
+      activeReview = (index + reviewCards.length) % reviewCards.length;
+      reviewCards.forEach((card, cardIndex) => card.classList.toggle('active', cardIndex === activeReview));
+    };
+    document.querySelector('.review-arrow.prev')?.addEventListener('click', () => showReview(activeReview - 1));
+    document.querySelector('.review-arrow.next')?.addEventListener('click', () => showReview(activeReview + 1));
+
+    const callbackForm = document.querySelector<HTMLFormElement>('.callback-card');
+    callbackForm?.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const status = callbackForm.querySelector<HTMLElement>('.form-status');
+      if (!callbackForm.checkValidity()) { callbackForm.reportValidity(); if (status) status.textContent = 'Please complete the required fields.'; return; }
+      const name = callbackForm.querySelector<HTMLInputElement>('#name')?.value.trim().split(' ')[0] || 'there';
+      if (status) status.textContent = `Thanks, ${name}! A Crestline roofing specialist will call you shortly.`;
+      callbackForm.reset();
+    });
+
+    const newsletter = document.querySelector<HTMLFormElement>('.newsletter');
+    newsletter?.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const status = newsletter.querySelector<HTMLElement>('.newsletter-status');
+      if (!newsletter.checkValidity()) { newsletter.reportValidity(); return; }
+      if (status) status.textContent = 'You’re on the list—thank you!';
+      newsletter.reset();
+    });
+  </script>
 </Layout>
