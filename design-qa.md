@@ -63,4 +63,61 @@ No open P0, P1, or P2 header findings remain.
 - No hero styles, hero content, hero assets, or sections below the header were modified.
 - The source header's taller branded topbar remains an expected difference because the existing approved logo, CTA, and hero placement were explicitly preserved.
 
+---
+
+# Crestline Hero Callback Form Fidelity QA
+
+## Visual target and evidence
+
+- Visual truth: `C:\Users\Pro Game\Downloads\FireShot\FireShot Capture 284 - Crestline Roofing - Roof Repair & Replacement - [127.0.0.1].png` (1917 × 1206).
+- Desktop capture: `qa/hero-form-target-desktop-final.png` at a 1920 × 1200 viewport.
+- Mobile capture: `qa/hero-form-target-mobile-final.png` at a 390 × 1320 viewport.
+- Direct comparison: `qa/hero-form-target-comparison.png`.
+
+## Requested form surfaces
+
+- The form uses a bold angular white outer frame, dark navy inner outline, and white form panel.
+- The orange header is a large asymmetrical polygon with the italic `Need roofing help?` line and a single-line `GET A CALL BACK` heading.
+- Visible field labels were removed while semantic labels remain in the HTML for assistive technology.
+- Field order is Name, Phone number, Email address, ZIP Code, and Tell us about your roof.
+- Inputs remain square, clean, and evenly spaced; the submit control uses the angled yellow treatment.
+- `No spam. No obligation.` is centered below the button inside the complete frame.
+- The form remains visually secondary to the main hero message and does not cover the technician's face.
+
+## Geometry and responsive verification
+
+- Desktop form box: x 1340, y 264.5, width 360, height 588.1; bottom 852.5 CSS px.
+- Desktop hero copy remains at y 392.0 CSS px; hero height remains 1120 CSS px.
+- Mobile form box: x 12, y 602.9, width 366, height 570.2; bottom 1173.0 CSS px.
+- Mobile hero copy remains at y 140.0 CSS px, within 2 CSS px of the approved pre-change position.
+- The entire frame, button, reassurance text, and bottom outline remain above the orange polygon at both tested widths.
+- Horizontal overflow: 0 px on desktop and mobile.
+- Existing header, navigation, hero text, phone block, CTAs, imagery, polygon geometry, hero height, and sections below the hero were not changed by this pass.
+
+## Validation and submission
+
+- The ZIP input retains `name="zip"`, `autocomplete="postal-code"`, numeric input mode, `required`, and a five-digit or ZIP+4 pattern.
+- Invalid ZIP `1234` fails native validation and focuses the ZIP field.
+- Valid ZIP `12345` is serialized with `name`, `phone`, `email`, and `message` in the submitted lead payload.
+- Existing success messaging and form-reset behavior pass.
+- Phone and estimate links remain valid.
+- Console errors: none.
+- Page errors: none.
+
+## Section-order preservation
+
+- The main section order remains hero, Crestline Promise, Roofing Services, About, Testimonials, Trust & service standards, Our Process, Local service, FAQ, final roof-check CTA, and service map.
+- `Trust & service standards` remains directly above `Our Process`.
+
+## Findings
+
+- P0: none.
+- P1: none.
+- P2: none.
+- P3: none within the requested form-only scope.
+
+## Build
+
+- `npm run build`: passed; Astro generated one static page successfully.
+
 final result: passed
