@@ -33,3 +33,19 @@ qa/*comparison*.html
 *.log
 tmp/
 .temp/
+
+# Internal QA documentation and browser artifacts (keep QA scripts)
+/design-qa.md
+qa/**/*.md
+qa/**/*.png
+qa/**/*.jpg
+qa/**/*.jpeg
+qa/**/*.webp
+qa/**/*.html
+qa/**/*.json
+qa/**/*.zip
+qa/**/*.webm
+/playwright/.auth/
+/.playwright-mcp/
+/browser-output/
+/test-output/
