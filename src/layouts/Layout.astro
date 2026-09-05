@@ -11,8 +11,8 @@ interface Props {
 }
 
 const {
-  title = 'Crestline Roofing | Roof Repair & Replacement',
-  description = 'Fast, dependable residential roof repair, full roof replacement, inspections, and emergency storm response from your local roofing team.',
+  title = 'Rooflume — Roofing & Restoration Astro Template',
+  description = 'Rooflume is a roofing and restoration Astro template for fast, dependable roof repair, replacement, inspections, and storm response services.',
 } = Astro.props;
 ---
 
@@ -23,9 +23,12 @@ const {
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#061f49" />
     <meta name="description" content={description} />
+    <meta name="author" content="KEYDIV" />
     <meta name="generator" content={Astro.generator} />
     <link rel="preload" as="image" href="/assets/hero-roofing.png" fetchpriority="high" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="shortcut icon" href="/favicon.ico" />
     <title>{title}</title>
   </head>
   <body>

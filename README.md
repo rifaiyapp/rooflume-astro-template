@@ -1,4 +1,6 @@
-# Astro Starter Kit: Basics
+# Rooflume — Roofing & Restoration Astro Template
+
+An Astro landing-page template designed and developed by KEYDIV.
 
 ```sh
 npm create astro@latest -- --template basics

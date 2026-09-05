@@ -54,13 +54,13 @@ for (const setup of [
   metrics.testimonials = { beforeReview, afterReview };
 
   await page.locator('#name').fill('Taylor Reed');
-  await page.locator('#phone').fill('(555) 123-4567');
-  await page.locator('#email').fill('taylor@example.com');
+  await page.locator('#phone').fill('(818) 555-0147');
+  await page.locator('#email').fill('hello@example.com');
   await page.locator('#message').fill('I would like a roof inspection.');
   await page.locator('.callback-card button[type="submit"]').click();
   metrics.callbackStatus = await page.locator('.form-status').textContent();
 
-  await page.locator('#newsletter-email').fill('taylor@example.com');
+  await page.locator('#newsletter-email').fill('hello@example.com');
   await page.locator('.newsletter button[type="submit"]').click();
   metrics.newsletterStatus = await page.locator('.newsletter-status').textContent();
   metrics.consoleErrors = consoleErrors;

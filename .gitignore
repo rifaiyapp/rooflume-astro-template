@@ -15,10 +15,21 @@ pnpm-debug.log*
 
 # environment variables
 .env
-.env.production
+.env.*
 
 # macOS-specific files
 .DS_Store
 
 # jetbrains setting folder
 .idea/
+
+# Playwright reports and temporary test output
+playwright-report/
+playwright/.cache/
+test-results/
+blob-report/
+qa/*.png
+qa/*comparison*.html
+*.log
+tmp/
+.temp/

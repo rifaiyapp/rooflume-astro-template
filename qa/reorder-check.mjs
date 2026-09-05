@@ -131,14 +131,14 @@ for (const setup of setups) {
   const reviewAfter = await page.locator('.testimonial-card.active').getAttribute('data-review');
 
   await page.locator('#name').fill('Taylor Reed');
-  await page.locator('#phone').fill('(555) 123-4567');
-  await page.locator('#email').fill('taylor@example.com');
+  await page.locator('#phone').fill('(818) 555-0147');
+  await page.locator('#email').fill('hello@example.com');
   await page.locator('#zip').fill('12345');
   await page.locator('#message').fill('I would like a roof inspection.');
   await page.locator('.callback-card button[type="submit"]').click();
   const callbackStatus = await page.locator('.form-status').textContent();
 
-  await page.locator('#newsletter-email').fill('taylor@example.com');
+  await page.locator('#newsletter-email').fill('hello@example.com');
   await page.locator('.newsletter button[type="submit"]').click();
   const newsletterStatus = await page.locator('.newsletter-status').textContent();
 

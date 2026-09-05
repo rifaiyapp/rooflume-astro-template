@@ -1,7 +1,9 @@
 {
-  "name": "roof-repair-replacement",
+  "name": "rooflume-astro-template",
   "type": "module",
   "version": "0.0.1",
+  "description": "Rooflume — Roofing & Restoration Astro Template",
+  "author": "KEYDIV",
   "engines": {
     "node": ">=22.12.0"
   },

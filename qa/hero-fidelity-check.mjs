@@ -63,8 +63,8 @@ for (const setup of [
   await page.locator('#callback button[type="submit"]').click();
   const invalidFocus = await page.evaluate(() => document.activeElement?.id);
   await page.locator('#name').fill('Taylor Reed');
-  await page.locator('#phone').fill('(555) 123-4567');
-  await page.locator('#email').fill('taylor@example.com');
+  await page.locator('#phone').fill('(818) 555-0147');
+  await page.locator('#email').fill('hello@example.com');
   await page.locator('#message').fill('I need a roof inspection.');
   await page.locator('#zip').fill('1234');
   await page.locator('#callback button[type="submit"]').click();
