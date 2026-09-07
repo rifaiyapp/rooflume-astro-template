@@ -58,6 +58,8 @@ for (const setup of [
   const clipY = Math.max(0, metrics.process.bottom - setup.above);
   await page.screenshot({
     path: `qa/process-testimonials-transition-${setup.name}-final.png`,
+    // clipY is a document coordinate below the initial viewport.
+    fullPage: true,
     clip: {
       x: 0,
       y: clipY,

@@ -13,6 +13,8 @@ for (const setup of [
     reducedMotion: 'reduce',
   });
   const errors = [];
+  // Exercise the UI without sending synthetic leads to the production gateway.
+  await page.route('https://lead-gateway.keydiv.workers.dev/v1/submit', route => route.fulfill({ json: { success: true } }));
   page.on('console', (message) => {
     if (message.type() === 'error') errors.push(message.text());
   });
@@ -74,15 +76,16 @@ for (const setup of [
     message: document.querySelector('#zip')?.validationMessage,
   }));
   await page.evaluate(() => {
-    globalThis.__crestlineLead = null;
-    document.querySelector('#callback')?.addEventListener('crestline:lead-submitted', (event) => {
-      globalThis.__crestlineLead = event.detail;
+    globalThis.__rooflumeLead = null;
+    document.querySelector('#callback')?.addEventListener('rooflume:lead-submitted', (event) => {
+      globalThis.__rooflumeLead = event.detail;
     }, { once: true });
   });
   await page.locator('#zip').fill('12345');
   await page.locator('#callback button[type="submit"]').click();
+  await page.waitForFunction(() => document.querySelector('.form-status')?.textContent?.includes('Thank'));
   const successMessage = await page.locator('.form-status').textContent();
-  const submittedLead = await page.evaluate(() => globalThis.__crestlineLead);
+  const submittedLead = await page.evaluate(() => globalThis.__rooflumeLead);
 
   report[setup.name] = {
     ...initial,
