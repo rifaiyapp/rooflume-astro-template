@@ -85,6 +85,10 @@ const faqs = [
         </div>
 
         <form class="callback-card hero-callback" id="callback" novalidate aria-labelledby="callback-title">
+          <div aria-hidden="true" style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);pointer-events:none;">
+            <label for="callback-website">Website</label>
+            <input id="callback-website" name="website" type="text" tabindex="-1" autocomplete="off" />
+          </div>
           <div class="hero-form-panel">
             <div class="form-header"><p>Need roofing help?</p><h2 id="callback-title">Free roof inspection</h2></div>
             <div class="form-body">
@@ -567,16 +571,8 @@ const faqs = [
       }, { threshold: .05 });
       mobileActionObstructions.forEach((element) => obstructionObserver.observe(element));
     }
-    callbackForm?.addEventListener('submit', (event) => {
-      event.preventDefault();
-      const status = callbackForm.querySelector<HTMLElement>('.form-status');
-      if (!callbackForm.checkValidity()) { callbackForm.reportValidity(); if (status) status.textContent = 'Please complete the required fields.'; return; }
-      const lead = Object.fromEntries(new FormData(callbackForm).entries());
-      const name = String(lead.name || '').trim().split(' ')[0] || 'there';
-      callbackForm.dispatchEvent(new CustomEvent('rooflume:lead-submitted', { detail: lead, bubbles: true }));
-      if (status) status.textContent = `Thanks, ${name}! A Rooflume roofing specialist will call you shortly.`;
-      callbackForm.reset();
-    });
+    import { connectLeadForm } from '../scripts/lead-form';
+    if (callbackForm) connectLeadForm(callbackForm);
 
   </script>
 </Layout>
