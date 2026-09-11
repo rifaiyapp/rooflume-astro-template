@@ -1,16 +1,22 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Runs when Codex resumes a cached container after checking out the requested branch.
+# Destination-neutral maintenance for cached Codex Cloud containers.
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 cd "$REPO_ROOT"
-GITHUB_OWNER="${KEYDIV_GITHUB_OWNER:-rifaiyapp}"
-REPO_NAME="${KEYDIV_GITHUB_REPO:-$(basename "$REPO_ROOT")}"
-REMOTE_URL="https://github.com/${GITHUB_OWNER}/${REPO_NAME}.git"
 
-# Reassert the global origin fallback after Codex switches to the task checkout.
-# This is intentionally repeated here because cached task worktrees may not carry
-# a repository-local remote even though setup configured the original clone.
+REMOTE_URL="$(git config --local --get remote.origin.url 2>/dev/null || true)"
+if [ -z "$REMOTE_URL" ]; then
+  REMOTE_URL="$(git config --global --get remote.origin.url 2>/dev/null || true)"
+fi
+if [ -z "$REMOTE_URL" ] && [ -n "${CODEX_GITHUB_REPOSITORY:-}" ]; then
+  REMOTE_URL="https://github.com/${CODEX_GITHUB_REPOSITORY}.git"
+fi
+if [ -z "$REMOTE_URL" ]; then
+  echo "No approved Git origin is available." >&2
+  exit 1
+fi
+
 git config --global remote.origin.url "$REMOTE_URL"
 if git config --local --get remote.origin.url >/dev/null 2>&1; then
   git remote set-url origin "$REMOTE_URL"
@@ -21,12 +27,9 @@ if [ ! -f package-lock.json ]; then
 fi
 
 CURRENT_HASH="$(sha256sum package-lock.json | awk '{print $1}')"
-STAMP="node_modules/.keydiv-package-lock.sha256"
+STAMP="node_modules/.codex-package-lock.sha256"
 PREVIOUS_HASH=""
-
-if [ -f "$STAMP" ]; then
-  PREVIOUS_HASH="$(cat "$STAMP")"
-fi
+[ -f "$STAMP" ] && PREVIOUS_HASH="$(cat "$STAMP")"
 
 if [ ! -d node_modules ] || [ "$CURRENT_HASH" != "$PREVIOUS_HASH" ]; then
   npm ci

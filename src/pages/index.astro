@@ -1,4 +1,5 @@
 ---
+import { site } from '../config/site';
 import Layout from '../layouts/Layout.astro';
 import ResponsiveImage from '../components/ResponsiveImage.astro';
 
@@ -36,14 +37,14 @@ const faqs = [
 <Layout>
   <header class="site-header" id="top">
     <div class="topbar shell">
-      <a class="brand" href="#top" aria-label="Rooflume home">
-        <ResponsiveImage src="/assets/rooflume-logo.png" alt="Rooflume — Roofing & Restoration" width="430" height="161" loading="eager" sizes="(max-width: 520px) 185px, (max-width: 820px) 205px, 285px" />
+      <a class="brand" href="#top" aria-label={`${site.name} home`}>
+        <ResponsiveImage src={site.logo.src} alt={site.logo.alt} width="430" height="161" loading="eager" sizes="(max-width: 520px) 185px, (max-width: 820px) 205px, 285px" />
       </a>
-      <a class="phone-lockup header-phone" href="tel:+18185550147" aria-label="Call Rooflume at (818) 555-0147">
+      <a class="phone-lockup header-phone" href={site.phone.href} aria-label={`Call ${site.name} at ${site.phone.display}`}>
         <span class="phone-icon"><i class="ph-fill ph-phone-call" aria-hidden="true"></i></span>
-        <span class="phone-copy"><small>Book Same-Day Service</small><strong>Call (818) 555-0147</strong></span>
+        <span class="phone-copy"><small>Book Same-Day Service</small><strong>Call {site.phone.display}</strong></span>
       </a>
-      <a class="button button-gold header-cta" href="#callback">Get my free roof inspection</a>
+      <a class="button button-gold header-cta" href="#callback">{site.primaryCta}</a>
       <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Open menu">
         <i class="ph ph-list" aria-hidden="true"></i>
       </button>
@@ -79,11 +80,11 @@ const faqs = [
           <h1 id="hero-title"><span>Fixed today.</span><strong>Not next storm.</strong><span class="h1-context">Roof repair and replacement in North Hills and the greater metro area.</span></h1>
           <p>Responsive roof repair and replacement from licensed professionals who respect your time, home, and budget.</p>
           <div class="hero-actions">
-            <a class="phone-lockup light" href="tel:+18185550147" aria-label="Call a local Rooflume roofer at (818) 555-0147">
+            <a class="phone-lockup light" href={site.phone.href} aria-label={`Call a local ${site.name} roofer at ${site.phone.display}`}>
               <span class="phone-icon"><i class="ph ph-phone-call" aria-hidden="true"></i></span>
-              <span><small>Talk with a local roofer</small><strong>(818) 555-0147</strong></span>
+              <span><small>Talk with a local roofer</small><strong>{site.phone.display}</strong></span>
             </a>
-            <a class="button button-gold" href="#callback">Get my free roof inspection</a>
+            <a class="button button-gold" href="#callback">{site.primaryCta}</a>
           </div>
           <ul class="hero-proof" aria-label="Service assurances">
             <li><i class="ph-fill ph-seal-check" aria-hidden="true"></i> Licensed & insured</li>
@@ -91,7 +92,7 @@ const faqs = [
           </ul>
         </div>
 
-        <form class="callback-card hero-callback" id="callback" novalidate aria-labelledby="callback-title">
+        <form class="callback-card hero-callback" id="callback" method="dialog" novalidate aria-labelledby="callback-title">
           <div aria-hidden="true" style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);pointer-events:none;">
             <label for="callback-website">Website</label>
             <input id="callback-website" name="website" type="text" tabindex="-1" autocomplete="off" />
@@ -100,11 +101,11 @@ const faqs = [
             <div class="form-header"><p>Need roofing help?</p><h2 id="callback-title">Free roof inspection</h2></div>
             <div class="form-body">
               <label for="name">Name</label><input id="name" name="name" autocomplete="name" required placeholder="Your name" />
-              <label for="phone">Phone number</label><input id="phone" name="phone" autocomplete="tel" inputmode="tel" required placeholder="(818) 555-0147" />
+              <label for="phone">Phone number</label><input id="phone" name="phone" autocomplete="tel" inputmode="tel" required placeholder={site.phone.display} />
               <label for="email">Email address</label><input id="email" name="email" type="email" autocomplete="email" required placeholder="hello@example.com" />
               <label for="zip">ZIP Code</label><input id="zip" name="zip" autocomplete="postal-code" inputmode="numeric" required pattern="[0-9]{5}(-[0-9]{4})?" maxlength="10" title="Enter a 5-digit ZIP Code or ZIP+4." placeholder="ZIP Code" />
               <label for="message">How can we help?</label><textarea id="message" name="message" rows="2" required placeholder="Tell us about your roof"></textarea>
-              <button class="button button-gold submit-button" type="submit">Get my free roof inspection</button>
+              <button class="button button-gold submit-button" type="submit">{site.primaryCta}</button>
               <p class="form-note">No spam. No obligation.</p><p class="form-status" role="status" aria-live="polite"></p>
             </div>
           </div>
@@ -116,7 +117,7 @@ const faqs = [
       <div class="shell section-stack">
         <div class="section-heading navy">
           <span>Why choose us</span>
-          <h2 id="benefits-title">The Rooflume promise</h2>
+          <h2 id="benefits-title">The {site.name} promise</h2>
         </div>
         <div class="benefit-grid">
           {benefits.map((item) => (
@@ -156,7 +157,7 @@ const faqs = [
     </section>
 
     <section class="about shell" id="about" aria-labelledby="about-title">
-      <div class="about-media" aria-label="Rooflume roofing services in action">
+      <div class="about-media" aria-label={`${site.name} roofing services in action`}>
         <div class="about-media-card main-card">
           <ResponsiveImage src="/assets/roofing-services.png" alt="Professional roofing crew installing shingles with safety harnesses" width="1600" height="1100" loading="lazy" decoding="async" />
         </div>
@@ -177,10 +178,10 @@ const faqs = [
       <div class="about-copy">
         <p class="script-label">About us</p>
         <h2 id="about-title">Roofing without the runaround</h2>
-        <p class="lead">We started Rooflume because homeowners deserved a roofer who calls back, shows up, and stands behind the work.</p>
+        <p class="lead">We started {site.name} because homeowners deserved a roofer who calls back, shows up, and stands behind the work.</p>
         <p>From pinpoint repairs to complete replacement, our team combines clear recommendations, careful protection of your property, and documentation at every stage. You always know what is happening above your head.</p>
         <div class="compact-actions">
-          <a class="phone-lockup" href="tel:+18185550147" aria-label="Call the Rooflume team at (818) 555-0147"><span class="phone-icon"><i class="ph ph-phone-call" aria-hidden="true"></i></span><span><small>Speak with our team</small><strong>(818) 555-0147</strong></span></a>
+          <a class="phone-lockup" href={site.phone.href} aria-label={`Call the ${site.name} team at ${site.phone.display}`}><span class="phone-icon"><i class="ph ph-phone-call" aria-hidden="true"></i></span><span><small>Speak with our team</small><strong>{site.phone.display}</strong></span></a>
           <a class="button button-navy" href="#process">Our process</a>
         </div>
         <div class="about-trust">
@@ -333,7 +334,7 @@ const faqs = [
             ))}
           </div>
 
-          <ul class="faq-trust" aria-label="Rooflume service commitments">
+          <ul class="faq-trust" aria-label={`${site.name} service commitments`}>
             <li>
               <span class="faq-trust-icon" aria-hidden="true"><svg viewBox="0 0 1024 1024" fill="currentColor"><path d="M855.4 501.84l-448 480c-5.854 6.235-14.148 10.12-23.351 10.12-17.673 0-32-14.327-32-32 0-2.165.215-4.28.591-6.12l58.64-293.32-230.52-86.56c-12.247-4.675-20.789-16.326-20.789-29.972 0-8.542 3.347-16.303 8.789-22.028l448-480c5.854-6.235 14.148-10.12 23.351-10.12 17.673 0 32 14.327 32 32 0 2.165-.215 4.28-.591 6.12l-58.8 293.64 230.52 86.44c12.174 4.712 20.65 16.326 20.65 29.919 0 8.471-3.292 16.173-8.49 21.879z" /></svg></span>
               <span class="faq-trust-copy"><strong>Fast response</strong><small>Clear scheduling updates</small></span>
@@ -351,7 +352,7 @@ const faqs = [
 
         <aside class="faq-worker-side" aria-label="Free roof inspection">
           <div class="faq-worker-visual">
-            <ResponsiveImage src="/assets/local-roofer.png" alt="Rooflume roofer ready to help a homeowner" width="1024" height="1536" loading="lazy" decoding="async" />
+            <ResponsiveImage src="/assets/local-roofer.png" alt={`${site.name} roofer ready to help a homeowner`} width="1024" height="1536" loading="lazy" decoding="async" />
           </div>
         </aside>
       </div>
@@ -365,17 +366,17 @@ const faqs = [
           <p class="roof-check-intro">Photo-documented advice, clear options, and no high-pressure sales pitch.</p>
 
           <div class="roof-check-actions">
-            <a class="roof-check-phone" href="tel:+18185550147" aria-label="Call Rooflume's free inspection line at (818) 555-0147">
+            <a class="roof-check-phone" href={site.phone.href} aria-label={`Call ${site.name}'s free inspection line at ${site.phone.display}`}>
               <span class="roof-check-phone-icon"><i class="ph-fill ph-phone-call" aria-hidden="true"></i></span>
-              <span class="roof-check-phone-copy"><small>Free inspection line</small><strong>(818) 555-0147</strong></span>
+              <span class="roof-check-phone-copy"><small>Free inspection line</small><strong>{site.phone.display}</strong></span>
             </a>
-            <a class="button roof-check-button" href="#callback">Get my free roof inspection <i class="ph-bold ph-arrow-up-right" aria-hidden="true"></i></a>
+            <a class="button roof-check-button" href="#callback">{site.primaryCta} <i class="ph-bold ph-arrow-up-right" aria-hidden="true"></i></a>
           </div>
         </div>
 
         <div class="roof-check-media">
           <div class="roof-check-photo">
-            <ResponsiveImage src="/assets/roofing-fleet.png" alt="Rooflume service vehicles ready for a residential roof inspection" width="1920" height="760" loading="lazy" decoding="async" />
+            <ResponsiveImage src="/assets/roofing-fleet.png" alt={`${site.name} service vehicles ready for a residential roof inspection`} width="1920" height="760" loading="lazy" decoding="async" />
           </div>
           <div class="roof-check-media-badge" aria-hidden="true">
             <span><i class="ph-fill ph-shield-check"></i></span>
@@ -386,27 +387,27 @@ const faqs = [
     </section>
   </main>
 
-  <footer class="site-footer" aria-label="Rooflume footer">
+  <footer class="site-footer" aria-label={`${site.name} footer`}>
     <div class="shell footer-main">
       <div class="footer-brand">
-        <ResponsiveImage src="/assets/rooflume-logo.png" alt="Rooflume — Roofing & Restoration" width="430" height="161" sizes="250px" loading="lazy" decoding="async" />
+        <ResponsiveImage src={site.logo.src} alt={site.logo.alt} width="430" height="161" sizes="250px" loading="lazy" decoding="async" />
         <p>Responsive roof repair, replacement, and storm support from a local team that keeps homeowners informed.</p>
-        <a class="phone-lockup light" href="tel:+18185550147" aria-label="Call Rooflume at (818) 555-0147"><span class="phone-icon"><i class="ph ph-phone-call" aria-hidden="true"></i></span><span><small>Roofing help is one call away</small><strong>(818) 555-0147</strong></span></a>
+        <a class="phone-lockup light" href={site.phone.href} aria-label={`Call ${site.name} at ${site.phone.display}`}><span class="phone-icon"><i class="ph ph-phone-call" aria-hidden="true"></i></span><span><small>Roofing help is one call away</small><strong>{site.phone.display}</strong></span></a>
       </div>
       <nav class="footer-links" aria-labelledby="footer-nav-title">
-        <h2 id="footer-nav-title">Explore Rooflume</h2>
+        <h2 id="footer-nav-title">Explore {site.name}</h2>
         <ul><li><a href="#home">Home</a></li><li><a href="#promise">Why Us</a></li><li><a href="#services">Services</a></li><li><a href="#about">About</a></li><li><a href="#process">How It Works</a></li><li><a href="#reviews">Reviews</a></li><li><a href="#faq">FAQ</a></li><li><a href="#roof-check">Contact</a></li></ul>
       </nav>
       <div class="footer-action">
         <p>Need an expert look at your roof?</p>
-        <a class="button button-gold" href="#callback">Get my free roof inspection</a>
+        <a class="button button-gold" href="#callback">{site.primaryCta}</a>
       </div>
     </div>
-    <div class="footer-bottom shell"><span>&copy; 2026 Rooflume. All rights reserved.<br /><small>Rooflume is a fictional demonstration brand. Template designed and developed by KEYDIV.</small></span><a href="#top">Back to top <i class="ph ph-arrow-up" aria-hidden="true"></i></a></div>
+    <div class="footer-bottom shell"><span>&copy; 2026 {site.name}. All rights reserved.<br /><small>{site.name} is a fictional demonstration brand. Template designed and developed by KEYDIV.</small></span><a href="#top">Back to top <i class="ph ph-arrow-up" aria-hidden="true"></i></a></div>
   </footer>
 
   <nav class="mobile-action-bar" aria-label="Mobile quick actions">
-    <a class="mobile-action mobile-action-call" href="tel:+18185550147" aria-label="Call Rooflume at (818) 555-0147">
+    <a class="mobile-action mobile-action-call" href={site.phone.href} aria-label={`Call ${site.name} at ${site.phone.display}`}>
       <svg viewBox="0 0 1024 1024" fill="currentColor" focusable="false" aria-hidden="true">
         <path d="M577.08 183.72c3.773-13.776 16.181-23.732 30.913-23.732 2.947 0 5.801.398 8.286 1.091 120.967 32.312 214.328 125.672 246.09 244.229l.55 2.411c.693 2.485 1.092 5.34 1.092 8.287 0 14.733-9.956 27.14-23.732 30.914-2.482.679-5.333 1.072-8.28 1.08-14.743 0-27.156-9.97-30.92-23.76-26.353-98.751-102.569-174.967-199.353-200.872l-1.967-.448c-13.795-3.761-23.769-16.177-23.769-30.923 0-2.944.397-5.794 1.089-8.277zM567.76 350.92c55.16 14.72 90.6 50.16 105.32 105.32 3.764 13.79 16.177 23.76 30.92 23.76 2.947-.008 5.798-.401 8.28-1.08 13.776-3.773 23.732-16.181 23.732-30.913 0-2.947-.398-5.801-1.091-8.286-20.48-76.64-74-130.16-150.64-150.64-2.478-.689-5.323-1.084-8.26-1.084-17.675 0-32.004 14.329-32.004 32.004 0 14.738 9.962 27.149 23.743 30.92zM895.52 732.32c-15.024 111.012-109.183 195.68-223.52 195.68-317.6 0-576-258.4-576-576 0-114.337 84.669-208.495 195.68-223.52 2.329-.3 5.023-.472 7.757-.472 26.144 0 48.627 15.677 58.723 38.552l84.48 188.6v.48c3.336 7.499 5.279 16.249 5.279 25.452 0 12.982-3.865 25.061-10.358 34.908-.72 1.08-1.48 2.08-2.28 3.08l-83.28 98.72c29.96 60.88 93.64 124 155.32 154.04l97.36-82.84c.885-.749 1.863-1.485 3-2.24 9.978-6.738 22.276-10.756 35.512-10.756 9.095 0 17.746 1.897 25.168 5.157l.52.24 188.44 84.44c22.937 10.07 38.666 32.584 38.666 58.772 0 2.717-.169 5.394-.466 7.708zM832 724.32h-.44l-188-84.2-97.4 82.84c-.874.745-1.839 1.481-2.96 2.24-9.98 6.741-22.28 10.761-35.519 10.761-9.987 0-19.44-2.288-27.482-6.2-74.92-36.2-149.6-110.32-185.84-184.44-4.026-8.14-6.381-17.724-6.381-27.857 0-12.996 3.874-25.088 10.381-34.943.731-1.161 1.483-2.167 2.28-3.08l83.36-98.84-84-188c-.008-.072-.012-.155 0-.48-79.407 10.654-140.001 77.975-140.001 159.88.319 282.642 229.359 511.682 512 512 81.936 0 149.201-60.443 160-139.68z" />
       </svg>

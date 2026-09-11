@@ -19,13 +19,14 @@ const server = createServer(async (req, res) => {
 await new Promise(done => server.listen(0, '127.0.0.1', done));
 const base = `http://127.0.0.1:${server.address().port}`;
 const browser = await chromium.launch({ headless: true });
-const endpoint = 'https://lead-gateway.keydiv.workers.dev/v1/submit';
+const endpoint = 'https://forms.example.test/submit';
 const values = { name: 'Test Homeowner', phone: '(818) 555-0147', email: 'test@example.com', zip: '90210-1234', message: 'Please inspect my roof.\nThank you.' };
 const error = "We couldn't send your request. Please try again.";
 try {
   const page = await browser.newPage();
   let calls = [];
   let respond;
+  await page.route('**/*', route => route.request().url().startsWith(base) ? route.continue() : route.abort());
   await page.route(endpoint, async route => {
     calls.push(route.request().postDataJSON());
     await respond(route);
@@ -69,7 +70,7 @@ try {
   while (!release) await new Promise(done => setTimeout(done, 10));
   assert.equal(calls.length, 1);
   assert.deepEqual(calls[0], {
-    project_id: 'rooflume', form_id: 'hero-quote', fields: values, website: '',
+    project_id: 'qa-project', form_id: 'qa-form', fields: values, website: '',
     meta: { page_url: page.url(), utm_source: 'google', utm_medium: 'cpc', utm_campaign: 'roof repair', utm_term: 'local', utm_content: 'hero', referrer: await page.evaluate(() => document.referrer) },
   });
   release();

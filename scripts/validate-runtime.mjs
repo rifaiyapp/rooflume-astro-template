@@ -5,7 +5,7 @@ const read = path => readFile(path, 'utf8');
 const config = JSON.parse(await read('project.config.json'));
 const pkg = JSON.parse(await read('package.json'));
 assert.equal(config.profile, 'private-demo', 'Review profile gates explicitly before changing profiles');
-assert.equal(config.factoryVersion, '4.5');
+assert.equal(config.factoryVersion, '4.7');
 assert.equal(pkg.engines.node, '>=22.12.0 <25');
 assert.equal(pkg.engines.npm, '11.x');
 assert.ok(!pkg.dependencies.wrangler && !pkg.devDependencies.wrangler);

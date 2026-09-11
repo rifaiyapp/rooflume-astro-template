@@ -28,6 +28,12 @@ try {
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     await page.goto(base, { waitUntil: 'networkidle' });
+    const capture = async (target, path) => {
+      // Warm the compositor before the recorded capture, as Playwright's visual
+      // assertions do when waiting for a stable screenshot.
+      await target.screenshot({ fullPage: true, animations: 'disabled' });
+      return target.screenshot({ path, fullPage: true, animations: 'disabled' });
+    };
     const settle = async target => {
       await target.evaluate(async () => {
         await document.fonts.ready;
@@ -37,13 +43,21 @@ try {
         // updates to settle after font/image decode before comparing pixels.
         await new Promise(done => setTimeout(done, 250));
         await new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done)));
+        // Normalize only sub-layout-unit floating-point drift in the idle carousel
+        // for deterministic captures; interaction tests below use its real handlers.
+        const track = document.querySelector('.testimonial-track');
+        if (track) {
+          const matrix = new DOMMatrix(getComputedStyle(track).transform);
+          track.style.transform = `translate3d(${Math.round(matrix.m41 * 64) / 64}px, 0, 0)`;
+        }
+        await new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done)));
       });
     };
     await settle(page);
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `Overflow at ${width}`);
     assert.equal(await page.locator('meta[name="robots"]').getAttribute('content'), 'noindex,nofollow,noarchive,nosnippet');
     assert.equal(await page.locator('img').evaluateAll(images => images.filter(img => !img.complete || !img.naturalWidth).length), 0);
-    const current = await page.screenshot({ path: `qa/runtime-output/current-${width}.png`, fullPage: true, animations: 'disabled' });
+    const current = await capture(page, `qa/runtime-output/current-${width}.png`);
     if (baseline) {
       const before = await context.newPage();
       await before.route(base + '/**', async route => {
@@ -53,7 +67,7 @@ try {
       });
       await before.goto(base, { waitUntil: 'networkidle' });
       await settle(before);
-      const original = await before.screenshot({ path: `qa/runtime-output/baseline-${width}.png`, fullPage: true, animations: 'disabled' });
+      const original = await capture(before, `qa/runtime-output/baseline-${width}.png`);
       assert.ok(original.equals(current), `Approved page pixels changed at ${width}px`);
       await before.close();
     }

@@ -1,10 +1,18 @@
 {
   "name": "rooflume-astro-template",
-  "factoryVersion": "4.5",
+  "factoryVersion": "4.7",
   "uiRuntimeVersion": "2",
   "profile": "private-demo",
   "purpose": "Premium roofing and restoration Astro template for commercial resale and future client customization",
   "approvedDesign": true,
-  "publishing": { "branch": "main", "outputDirectory": "dist", "intendedDomain": "https://rooflume.keydiv.com" },
-  "leadService": { "configured": true, "sanitizeBeforeDistribution": true }
+  "publishing": {
+    "branch": "main",
+    "outputDirectory": "dist",
+    "intendedDomain": ""
+  },
+  "leadService": {
+    "mode": "demo",
+    "configuration": "src/config/lead.ts",
+    "customerOwned": true
+  }
 }

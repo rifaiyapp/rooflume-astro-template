@@ -1,22 +1,13 @@
-# Customer distribution readiness
+# Distribution boundary
 
-This approved private demo is connected to a Keydiv-owned **Lead Service**. It is not a disconnected form demo. Preserve the working integration in this repository during runtime maintenance.
+The current product source is destination-neutral. Earlier seller-owned Lead Service routing and identifiers were removed from frontend configuration and related QA. No private webhook, credential header, embedded token or analytics account ID was found in current runtime source. The default build does not send leads.
 
-## Integration inventory
+Cloud scripts use neutral CODEX_* settings and actual origin. Publishing config has only an editable account-scoped example name and static assets, with no account/zone/domain binding. Creator credit is non-operational.
 
-- `src/scripts/lead-form.ts`: existing browser-visible Lead Service endpoint, project identifier and form identifier. These are routing configuration, not credentials. Do not reproduce the values in team documentation.
-- `qa/lead-gateway-check.mjs`: matching routing configuration and mock response contract. Requests are intercepted; this is not proof of live delivery.
-- No embedded credential, secret header or private downstream webhook was found in the form implementation. Delivery, CORS, spam handling and downstream automation depend on the externally managed Lead Service; their configuration is outside this repository and was not audited.
-- The form sends name, phone, email, ZIP, message, honeypot and page/campaign/referrer metadata. It waits for confirmed success, preserves entries on failure, prevents duplicate submission, and emits `rooflume:lead-submitted` after success.
-- `wrangler.jsonc` contains existing Publishing Service identity; the current repository remote and Cloud bootstrap scripts are Keydiv-specific infrastructure configuration.
+- Run npm run audit:distribution after building. It scans current repository text/output for seller operational dependencies, credential patterns and tracked local artifacts. Pattern scanning is not proof of absence of every possible secret.
+- Distribute a clean archive of the current product revision, not the local workspace or .git directory. Exclude environment files, dependencies, built/QA output, credentials and logs. Git archive honors repository export exclusions.
+- Master history is intentionally preserved. Earlier revisions contain obsolete seller integration settings; do not deploy those as customer templates. Full-history imports carry historical material even though current source is neutral. Prefer a fresh repository from the current archive for a clean handoff. Never rewrite master history for this purpose.
+- Clones retain source origin. Bind a copy to the buyer repository before write-enabled setup; scripts cannot infer whether an existing source remote is intended.
+- Confirm commercial license and imagery/font/icon redistribution rights and preserve required notices. Productization grants no new rights and does not verify fictional business claims.
 
-## Required before shipping a customer copy
-
-1. Replace Lead Service routing and project/form identifiers with customer-owned or explicitly licensed configuration. Update the mocked QA configuration together. Do not ship a customer form that sends leads to the existing demo service.
-2. Verify actual delivery with the customer's authorization, including CORS, success/error handling, spam controls, data retention, privacy disclosures and consent requirements. Keep all service credentials server-side.
-3. Replace Publishing Service identity, intended domain and repository ownership configuration. Remove Keydiv-only Cloud bootstrap/maintenance scripts from the distribution package or adapt them to approved customer infrastructure; never run the existing scripts in a customer account unchanged.
-4. Produce a clean customer export without `.git`, credentials, environment files, QA artifacts or private infrastructure history. Preserve the original repository history; do not rewrite it as part of distribution preparation.
-5. Replace demonstration contacts, reviews and business claims with verified customer content; confirm commercial redistribution rights for imagery, fonts and icons and include required licenses. Preserve the demo design unless customization is requested.
-6. Select exactly one customer profile explicitly. Keep this repository `private-demo`; do not enable indexing here as part of a customer launch.
-
-The runtime upgrade does not certify this package as sanitized for resale, nor verify the external Lead Service's operational delivery.
+Continue with [customer setup](CUSTOMER-SETUP.md). No author GitHub/Cloudflare account, private Lead Service or Automation Service is required.

@@ -21,15 +21,15 @@ Consult these guides before working on related tasks:
 - [Adding styles or using Tailwind](https://docs.astro.build/en/guides/styling/)
 - [Supporting multiple languages](https://docs.astro.build/en/guides/internationalization/)
 
-## Keydiv Astro Factory v4.5 project runtime
+## Keydiv Astro Factory v4.7 project runtime
 
 This is an approved, completed commercial template. Project Upgrade is foundation-only: preserve the page design, content, layout, images, typography, colors, responsive behavior, animations, form fields and functionality. Do not redesign because runtime guidance changed. Read `project.config.json`, `DESIGN.md` and `docs/DISTRIBUTION.md` first.
 
 - Exactly one profile: `private-demo`. Keep robots meta and equivalent headers `noindex,nofollow,noarchive,nosnippet`, allow crawling so noindex can be seen, and do not add indexable sitemaps or promoting canonicals. Noindex is not access control.
 - Static-first Astro; retain minimal existing client scripts. No framework, adapter, tracking or deployment dependency without a real requirement. Never install Wrangler solely for publishing.
 - Node 22.12+ or Node 24, below 25; npm 11. Cloud uses Node 22; local preference is `.nvmrc`.
-- Cloud bootstrap: `bash scripts/codex-cloud-setup.sh`; cached maintenance: `bash scripts/codex-cloud-maintenance.sh`. Admin configures the environment once. Never expose credentials or execute privileged bootstrap merely for local QA.
-- Keep the existing Lead Service functional. Read `docs/DISTRIBUTION.md` before integration changes. Never send test leads to the live service without explicit authorization; intercept submissions in QA.
+- Cloud bootstrap: `bash scripts/codex-cloud-setup.sh`; cached maintenance: `bash scripts/codex-cloud-maintenance.sh`. The destination owner configures its own environment once using `CODEX_GITHUB_TOKEN`; see `docs/CODEX-CLOUD-SETUP.md`. Never expose credentials or execute privileged bootstrap merely for local QA.
+- The form ships in non-sending demo mode. Read `docs/FORM-INTEGRATION.md` before configuring a customer-owned Lead Service. Preserve its fields, validation and interaction UX; never reintroduce seller routing or send test leads without authorization.
 - Team-facing infrastructure names are Lead Service, Publishing Service, Automation Service and Project Configuration. Never print private endpoint values, identifiers, webhooks or credentials.
 - Preserve semantic markup, labels, keyboard focus, reduced motion, responsive reflow, reserved image dimensions and self-hosted media. Target WCAG 2.2 AA and LCP <=2.5s, INP <=200ms, CLS <=0.1 without claiming unmeasured field results.
 - Preserve appropriate security headers, no secret/client credential storage, no lead-data logging, no unnecessary third-party resources. Do not add HSTS without domain readiness confirmation or broad immutable caching on error responses.
@@ -37,12 +37,26 @@ This is an approved, completed commercial template. Project Upgrade is foundatio
 ## Validation and safe direct publishing
 
 1. Inspect Git status and existing instructions; preserve unrelated user changes, history and the valid remote. Fetch `origin/main` before editing when practical, and inspect ancestry without resetting user work.
-2. Install with `npm ci` when needed; run `npm run validate`, `npm audit`, `git diff --check`, and scan the intended diff for secrets, private configuration leakage, starter contamination and unintended files. Do not suppress failed checks or use force audit fixes.
+2. Install with `npm ci` when needed; run `npm run validate`, `npm audit`, `npm run audit:distribution`, `npm run qa:cloud`, `git diff --check`, and scan the intended diff for secrets, private configuration leakage, starter contamination and unintended files. Do not suppress failed checks or use force audit fixes.
 3. Run `npm run qa:form` and `npm run qa:runtime` for changes affecting runtime/page behavior. Render desktop/mobile and inspect screenshots when available; never claim visual QA without rendering. `QA_BASELINE` may point to a pre-change build for pixel comparison.
 4. Commit only intended validated changes, then fetch latest main again. Preserve newer remote work. Rebase only task commits if needed, resolve only unambiguous conflicts, and rerun relevant validation/audit after reconciliation.
 5. When write authentication and repository policy permit, safely push `git push origin HEAD:main`. Routine work does not stop at a local commit or prepared pull request. A pull request is used only if explicitly requested or required by policy. Never force-push, overwrite newer work or publish failed validation.
-6. If origin is missing, confirm approved repository identity before reconstruction. Existing valid history/remote must be preserved. Cloud scripts supply the approved origin fallback.
+6. Prefer actual local origin, then the approved origin persisted by this environment. Only if no origin is available use `CODEX_GITHUB_REPOSITORY=owner/repository`. Never infer an owner or use a seller/agency fallback. A clone still pointing to its source must be rebound to the buyer repository before write-enabled setup. Never change the master remote as part of copy setup.
 7. Publishing Service uses the existing static configuration and `dist`. Perform bounded live verification at the intended domain when available, including route status, noindex and security headers. Report a real blocker honestly; deployment propagation uses the exact response contract below.
+
+## Customer-portable template runtime
+
+This repository is a distributable template/product. Normal maintenance must be possible from the repository instructions alone; do not require the customer to install the Keydiv factory skill.
+
+- Preserve the approved design system in `DESIGN.md` unless the customer explicitly requests a redesign.
+- Use the current repository `origin` for Git finalization. Never infer or rewrite the customer destination to a seller-owned GitHub account.
+- Never expose or reintroduce seller-private Lead Service, Automation Service, publishing credentials, webhooks, tokens, private endpoints, or account identifiers.
+- Treat form/backend integration as customer-owned configuration. Do not silently send leads/data to the template author's systems.
+- Keep common customer business/rebrand values centralized when the project provides a site config.
+- Before launch, make the intended indexing/profile behavior explicit so a demo/noindex profile is not accidentally shipped as production.
+- Follow the repository's safe validation, direct-publish, visual QA, and strict concise final-response rules.
+
+- Agency copies are ordinary destination copies; no separate agency-specific factory/runtime is required.
 
 ## Keydiv UI/UX design runtime
 

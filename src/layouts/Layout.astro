@@ -1,4 +1,5 @@
 ---
+import { site } from '../config/site';
 import '../styles/icons.css';
 import '@fontsource/lobster-two/latin-400-italic.css';
 import '@fontsource/oswald/latin-700.css';
@@ -10,8 +11,8 @@ interface Props {
 }
 
 const {
-  title = 'Rooflume — Roofing & Restoration Astro Template',
-  description = 'Rooflume is a roofing and restoration Astro template for fast, dependable roof repair, replacement, inspections, and storm response services.',
+  title = site.seo.title,
+  description = site.seo.description,
 } = Astro.props;
 ---
 
@@ -25,9 +26,9 @@ const {
     <meta name="robots" content="noindex,nofollow,noarchive,nosnippet" />
     <meta name="author" content="KEYDIV" />
     <meta name="generator" content={Astro.generator} />
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
-    <link rel="shortcut icon" href="/favicon.ico" />
+    <link rel="icon" type="image/png" sizes="32x32" href={site.favicon.large} />
+    <link rel="icon" type="image/png" sizes="16x16" href={site.favicon.small} />
+    <link rel="shortcut icon" href={site.favicon.ico} />
     <title>{title}</title>
   </head>
   <body>

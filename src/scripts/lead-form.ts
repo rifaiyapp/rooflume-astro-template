@@ -1,10 +1,5 @@
-// Public routing configuration only. Credentials belong on the gateway.
-export const leadConfig = {
-  endpoint: 'https://lead-gateway.keydiv.workers.dev/v1/submit',
-  projectId: 'rooflume',
-  formId: 'hero-quote',
-  timeoutMs: 15000,
-};
+import { leadConfig, hasLiveLeadService } from '../config/lead';
+import { site } from '../config/site';
 
 export function connectLeadForm(form: HTMLFormElement) {
   if (form.dataset.leadConnected) return;
@@ -38,6 +33,13 @@ export function connectLeadForm(form: HTMLFormElement) {
     if (!form.checkValidity()) {
       form.reportValidity();
       status.textContent = 'Please complete the required fields.';
+      return;
+    }
+
+    if (!hasLiveLeadService()) {
+      status.textContent = leadConfig.mode === 'demo'
+        ? 'Demo only. Your request was not sent.'
+        : 'Online requests are not configured. Please call us.';
       return;
     }
 
@@ -88,7 +90,7 @@ export function connectLeadForm(form: HTMLFormElement) {
       if (result?.success !== true) throw new Error('Submission failed');
       submitted = true;
       const name = String(fields.name || '').trim().split(' ')[0] || 'there';
-      status.textContent = `Thanks, ${name}! A Rooflume roofing specialist will call you shortly.`;
+      status.textContent = `Thanks, ${name}! A ${site.name} roofing specialist will call you shortly.`;
       form.reset();
       form.dispatchEvent(new CustomEvent('rooflume:lead-submitted', { detail: fields, bubbles: true }));
     } catch {
