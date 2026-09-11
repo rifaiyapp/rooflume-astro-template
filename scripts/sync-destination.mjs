@@ -1,30 +1,23 @@
 import fs from "node:fs";
 import { execSync } from "node:child_process";
 
-const configPath = new URL("../wrangler.jsonc", import.meta.url);
+const wranglerPath = new URL("../wrangler.jsonc", import.meta.url);
+const projectConfigPath = new URL("../project.config.json", import.meta.url);
 
-function getDestination() {
+function getRepositoryName() {
   const explicitWorkerName =
     process.env.CLOUDFLARE_WORKER_NAME?.trim();
-
-  if (explicitWorkerName) {
-    return {
-      repositoryName: null,
-      workerName: explicitWorkerName,
-    };
-  }
 
   const explicitRepository =
     process.env.CODEX_GITHUB_REPOSITORY ||
     process.env.GITHUB_REPOSITORY;
 
   if (explicitRepository) {
-    const repositoryName = explicitRepository.split("/").pop();
+    return explicitRepository.split("/").pop();
+  }
 
-    return {
-      repositoryName,
-      workerName: repositoryName,
-    };
+  if (explicitWorkerName) {
+    return explicitWorkerName;
   }
 
   try {
@@ -37,57 +30,71 @@ function getDestination() {
       /github\.com[/:][^/]+\/([^/]+?)(?:\.git)?$/
     );
 
-    if (!match) return null;
-
-    return {
-      repositoryName: match[1],
-      workerName: match[1],
-    };
+    return match?.[1] || null;
   } catch {
     return null;
   }
 }
 
-const destination = getDestination();
+function getBasePath(repositoryName) {
+  if (!repositoryName) return "/";
 
-if (!destination?.workerName) {
+  if (repositoryName === "rooflume-astro-template") {
+    return "/";
+  }
+
+  const shibgaMatch = repositoryName.match(/^shibga-(.+)-lp-(\d+)$/);
+
+  if (shibgaMatch) {
+    const [, service, number] = shibgaMatch;
+    return `/lp/${service}-${number}/`;
+  }
+
+  return "/";
+}
+
+const repositoryName = getRepositoryName();
+
+if (!repositoryName) {
   console.log("Destination sync skipped: repository identity unavailable.");
   process.exit(0);
 }
 
-/*
- * Preserve the canonical product master.
- *
- * Destination copies are expected to use their own repository name.
- * No GitHub owner/account is hardcoded here.
- */
-if (destination.repositoryName === "rooflume-astro-template") {
+const workerName =
+  process.env.CLOUDFLARE_WORKER_NAME?.trim() || repositoryName;
+
+const basePath =
+  process.env.DEPLOYMENT_BASE_PATH?.trim() ||
+  getBasePath(repositoryName);
+
+// Keep canonical master unchanged.
+if (repositoryName === "rooflume-astro-template") {
   console.log("Destination sync skipped: canonical template repository.");
   process.exit(0);
 }
 
-const raw = fs.readFileSync(configPath, "utf8");
+// Sync wrangler Worker name.
+const wranglerRaw = fs.readFileSync(wranglerPath, "utf8");
 
-const match = raw.match(/"name"\s*:\s*"([^"]+)"/);
-
-if (!match) {
-  throw new Error("Unable to locate Worker name in wrangler.jsonc.");
-}
-
-const currentName = match[1];
-
-if (currentName === destination.workerName) {
-  console.log(`Worker name already matches: ${destination.workerName}`);
-  process.exit(0);
-}
-
-const updated = raw.replace(
+const wranglerUpdated = wranglerRaw.replace(
   /"name"\s*:\s*"[^"]+"/,
-  `"name": "${destination.workerName}"`
+  `"name": "${workerName}"`
 );
 
-fs.writeFileSync(configPath, updated);
+fs.writeFileSync(wranglerPath, wranglerUpdated);
 
-console.log(
-  `Worker name synchronized: ${currentName} -> ${destination.workerName}`
+// Sync project deployment base path.
+const projectConfig = JSON.parse(
+  fs.readFileSync(projectConfigPath, "utf8")
 );
+
+projectConfig.deployment ??= {};
+projectConfig.deployment.basePath = basePath;
+
+fs.writeFileSync(
+  projectConfigPath,
+  `${JSON.stringify(projectConfig, null, 2)}\n`
+);
+
+console.log(`Worker name synchronized: ${workerName}`);
+console.log(`Deployment base path synchronized: ${basePath}`);

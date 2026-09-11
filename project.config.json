@@ -14,8 +14,8 @@
     "mode": "demo",
     "configuration": "src/config/lead.ts",
     "customerOwned": true
-  }
+  },
   "deployment": {
-  "basePath": "/"
+    "basePath": "/"
   }
 }
