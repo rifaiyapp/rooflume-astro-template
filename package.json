@@ -10,6 +10,8 @@
   },
   "scripts": {
     "dev": "astro dev",
+    "sync:destination": "node scripts/sync-destination.mjs",
+    "prebuild": "node scripts/sync-destination.mjs",
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
