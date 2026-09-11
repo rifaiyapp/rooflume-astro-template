@@ -50,3 +50,5 @@ qa/**/*.webm
 /.playwright-mcp/
 /browser-output/
 /test-output/
+
+.wrangler/
