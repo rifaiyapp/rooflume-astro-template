@@ -5,21 +5,29 @@
   "description": "Rooflume — Roofing & Restoration Astro Template",
   "author": "KEYDIV",
   "engines": {
-    "node": ">=22.12.0"
+    "node": ">=22.12.0 <25",
+    "npm": "11.x"
   },
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "check": "astro check",
+    "validate": "npm run check && npm run build && node scripts/validate-runtime.mjs",
+    "audit": "npm audit",
+    "qa:form": "node qa/lead-gateway-check.mjs",
+    "qa:runtime": "node qa/runtime-upgrade-check.mjs"
   },
   "dependencies": {
     "@fontsource/lobster-two": "^5.3.0",
     "@fontsource/oswald": "^5.3.0",
     "@phosphor-icons/web": "^2.1.2",
-    "astro": "^7.2.2"
+    "astro": "~7.2.8"
   },
   "devDependencies": {
-    "playwright": "^1.62.1"
+    "@astrojs/check": "^0.9.10",
+    "playwright": "^1.62.1",
+    "typescript": "^6.0.3"
   }
 }

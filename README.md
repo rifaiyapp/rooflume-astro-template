@@ -11,7 +11,7 @@ Rooflume is a fictional demonstration brand.
 - Roofing service cards, company introduction, process section, service-area imagery, and inspection calls to action.
 - Responsive navigation and mobile call/inspection action bar.
 - Testimonial carousel and expandable FAQ.
-- Callback form with browser validation and demo feedback.
+- Callback form with browser validation and connected Lead Service feedback.
 - Semantic markup, skip navigation, visible focus styles, and form status announcements.
 - Static production output with local imagery, icons, and self-hosted display fonts.
 
@@ -36,7 +36,7 @@ package.json             Dependencies and commands
 
 ## Installation
 
-Install Node.js **22.12.0 or newer** and npm. From the downloaded project directory:
+Use Node.js **22.12+ or 24 (below 25)** and **npm 11**. Codex Cloud uses Node 22; `.nvmrc` prefers Node 24 locally. From the downloaded project directory:
 
 ```sh
 npm ci
@@ -62,18 +62,23 @@ npm ci
 
 ## Callback and newsletter integration
 
-The callback form validates fields, emits the browser event `rooflume:lead-submitted` with form data, displays demo success text, and resets. **No backend endpoint is configured; submissions do not deliver messages.** Connect a server endpoint or form service and show success only after confirmed delivery. Keep service credentials on the server.
+The callback form is connected to a Keydiv-owned **Lead Service**. It validates fields, sends the request, shows success only after confirmed acceptance, and emits `rooflume:lead-submitted` after success. Failed submissions retain the entered fields. Do not remove this working integration during template maintenance. See [customer distribution requirements](docs/DISTRIBUTION.md) before sharing a customer copy; the current demo routing must be replaced or explicitly licensed.
 
 No newsletter form is included in the current implementation. Adding subscriptions requires a form, an email-provider integration, and appropriate consent handling.
 
-## Cloudflare Pages deployment
+## Factory runtime and future editing
 
-Connect your repository to Cloudflare Pages and select `main` as the production branch. Use a Node.js version compatible with the requirement above.
+The project uses Keydiv Astro Factory v4.5 and the current repository UI Design Runtime. Read `AGENTS.md`, `project.config.json`, `DESIGN.md` and `docs/KEYDIV-UI-DESIGN.md` before editing. This is an approved design; runtime upgrades preserve its appearance and behavior.
 
-- **Build command:** `npm run build`
-- **Output directory:** `dist`
+Run `npm run validate` for type checks, build and runtime/profile gates, `npm audit` for dependency security, `npm run qa:form` for mocked form behavior, and `npm run qa:runtime` for rendered page checks. Browser QA requires Playwright Chromium. Optional `QA_BASELINE` points at a pre-change build for pixel comparison. Historical QA scripts may target earlier designs; the two commands above are the current regression entry points.
 
-Deploy the static output; configure any form backend separately.
+The profile is **private-demo**: noindex metadata/headers, crawlable robots policy, no indexable sitemap or promoting canonical. The security policy protects framing, base URLs and object embedding without restricting the existing Lead Service connection or inline styles. Stronger resource restrictions require a separate compatibility review. Noindex does not provide access control.
+
+## Cloud editing and Publishing Service
+
+Admin configures the Cloud environment once using Node 22, container caching, the approved credential secret and the canonical `scripts/codex-cloud-setup.sh` / `scripts/codex-cloud-maintenance.sh` entry points. These scripts are privileged infrastructure; do not run them merely for local validation or distribute them unchanged to customers. Cached maintenance installs only when the lockfile changes or dependencies are absent.
+
+Preserve the existing Git remote/history and Publishing Service configuration. Validated changes safely synchronize and publish to `main` under `AGENTS.md`; never force-push. Build command is `npm run build`, static output is `dist`, and the existing publishing configuration remains authoritative. A deployment CLI is not a project dependency.
 
 ## Planned demos
 
