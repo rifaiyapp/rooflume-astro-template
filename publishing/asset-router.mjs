@@ -1,5 +1,27 @@
 const REVALIDATE = "public, max-age=0, must-revalidate";
 
+function getPrefix(pathname) {
+  const parts = pathname.split("/").filter(Boolean);
+
+  if (parts.length < 2) {
+    return "";
+  }
+
+  return `/${parts[0]}/${parts[1]}`;
+}
+
+function stripPrefix(pathname) {
+  const parts = pathname.split("/").filter(Boolean);
+
+  if (parts.length < 2) {
+    return pathname;
+  }
+
+  const remaining = parts.slice(2).join("/");
+
+  return remaining ? `/${remaining}` : "/";
+}
+
 function withCacheHeaders(response, pathname) {
   const headers = new Headers(response.headers);
 
@@ -26,38 +48,67 @@ async function fetchAsset(request, env, url) {
   return env.ASSETS.fetch(new Request(url, request));
 }
 
+async function rewriteHtml(response, prefix) {
+  if (!prefix || response.status !== 200) {
+    return response;
+  }
+
+  const contentType = response.headers.get("content-type") || "";
+
+  if (!contentType.includes("text/html")) {
+    return response;
+  }
+
+  let html = await response.text();
+
+  html = html
+    .replaceAll('href="/_astro/', `href="${prefix}/_astro/`)
+    .replaceAll('src="/_astro/', `src="${prefix}/_astro/`)
+    .replaceAll('href="/assets/', `href="${prefix}/assets/`)
+    .replaceAll('src="/assets/', `src="${prefix}/assets/`)
+    .replaceAll('srcset="/assets/', `srcset="${prefix}/assets/`)
+    .replaceAll('href="/favicon', `href="${prefix}/favicon`);
+
+  const headers = new Headers(response.headers);
+  headers.delete("content-length");
+
+  return new Response(html, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+}
+
 export default {
   async fetch(request, env) {
     const originalUrl = new URL(request.url);
 
-    // Root deployments work normally.
+    // First try the exact request. This preserves normal root deployments.
     let response = await fetchAsset(request, env, originalUrl);
 
     if (response.status !== 404) {
       return withCacheHeaders(response, originalUrl.pathname);
     }
 
-    /*
-     * Portable nested deployment support.
-     *
-     * Example:
-     * /lp/roofing-01/          -> /
-     * /lp/roofing-01/foo      -> /foo
-     *
-     * Root/custom-domain deployments are unaffected because
-     * the original request is always attempted first.
-     */
-    const segments = originalUrl.pathname.split("/").filter(Boolean);
+    const prefix = getPrefix(originalUrl.pathname);
 
-    if (segments.length >= 2) {
-      const rewrittenUrl = new URL(originalUrl);
-
-      const remaining = segments.slice(2).join("/");
-      rewrittenUrl.pathname = remaining ? `/${remaining}` : "/";
-
-      response = await fetchAsset(request, env, rewrittenUrl);
+    if (!prefix) {
+      return withCacheHeaders(response, originalUrl.pathname);
     }
 
-    return withCacheHeaders(response, originalUrl.pathname);
+    // Nested deployment:
+    // /lp/roofing-01/           -> /
+    // /lp/roofing-01/_astro/x  -> /_astro/x
+    // /lp/roofing-01/assets/x  -> /assets/x
+    const rewrittenUrl = new URL(originalUrl);
+    rewrittenUrl.pathname = stripPrefix(originalUrl.pathname);
+
+    response = await fetchAsset(request, env, rewrittenUrl);
+
+    // When serving HTML from a nested route, rewrite root-relative
+    // asset URLs so subsequent browser requests stay under that route.
+    response = await rewriteHtml(response, prefix);
+
+    return withCacheHeaders(response, rewrittenUrl.pathname);
   },
 };
