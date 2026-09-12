@@ -93,6 +93,10 @@ export function connectLeadForm(form: HTMLFormElement) {
       status.textContent = `Thanks, ${name}! A ${site.name} roofing specialist will call you shortly.`;
       form.reset();
       form.dispatchEvent(new CustomEvent('rooflume:lead-submitted', { detail: fields, bubbles: true }));
+
+      window.setTimeout(() => {
+        window.location.href = `${import.meta.env.BASE_URL}thank-you/`;
+      }, 800);
     } catch {
       status.textContent = "We couldn't send your request. Please try again.";
     } finally {

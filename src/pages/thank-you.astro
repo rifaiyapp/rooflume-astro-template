@@ -1,0 +1,26 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { site } from "../config/site";
+---
+
+<Layout
+  title={`Thank You | ${site.name}`}
+  description="Your roof inspection request has been received."
+>
+  <main class="thank-you-page">
+    <section class="thank-you-card">
+      <p class="eyebrow">Request received</p>
+
+      <h1>Thank you!</h1>
+
+      <p>
+        Your free roof inspection request has been received.
+        A {site.name} roofing specialist will contact you shortly.
+      </p>
+
+      <a class="button button-gold" href={import.meta.env.BASE_URL}>
+        Back to Home
+      </a>
+    </section>
+  </main>
+</Layout>
