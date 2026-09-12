@@ -7,6 +7,7 @@ export function connectLeadForm(form: HTMLFormElement) {
   const status = form.querySelector<HTMLElement>('.form-status');
   if (!button || !status) return;
   form.dataset.leadConnected = 'true';
+  const connectedAt = performance.now();
   let submitting = false;
   let submitted = false;
 
@@ -64,6 +65,7 @@ export function connectLeadForm(form: HTMLFormElement) {
         utm_term: params.get('utm_term') || '',
         utm_content: params.get('utm_content') || '',
         referrer: document.referrer,
+        submit_elapsed_ms: Math.round(performance.now() - connectedAt),
       },
       website: String(data.get('website') || ''),
     };

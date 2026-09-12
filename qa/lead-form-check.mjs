@@ -69,9 +69,12 @@ try {
   assert.equal(await page.locator('[name="name"]').inputValue(), values.name);
   while (!release) await new Promise(done => setTimeout(done, 10));
   assert.equal(calls.length, 1);
+  const elapsed = calls[0].meta.submit_elapsed_ms;
+  assert.ok(Number.isInteger(elapsed) && elapsed > 0);
+  assert.ok(elapsed <= await page.evaluate(() => Math.ceil(performance.now())));
   assert.deepEqual(calls[0], {
     project_id: 'qa-project', form_id: 'qa-form', fields: values, website: '',
-    meta: { page_url: page.url(), utm_source: 'google', utm_medium: 'cpc', utm_campaign: 'roof repair', utm_term: 'local', utm_content: 'hero', referrer: await page.evaluate(() => document.referrer) },
+    meta: { page_url: page.url(), utm_source: 'google', utm_medium: 'cpc', utm_campaign: 'roof repair', utm_term: 'local', utm_content: 'hero', referrer: await page.evaluate(() => document.referrer), submit_elapsed_ms: elapsed },
   });
   release();
   await waitStatus('Thanks, Test! A Rooflume roofing specialist will call you shortly.');
