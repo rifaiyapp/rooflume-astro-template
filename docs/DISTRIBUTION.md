@@ -2,7 +2,7 @@
 
 The current product source is destination-neutral. Earlier seller-owned Lead Service routing and identifiers were removed from frontend configuration and related QA. No private webhook, credential header, embedded token or analytics account ID was found in current runtime source. The default build does not send leads.
 
-Cloud scripts use neutral CODEX_* settings and actual origin. Publishing config has only an editable account-scoped example name and static assets, with no account/zone/domain binding. Creator credit is non-operational.
+Cloud scripts use neutral CODEX_* settings and actual origin. Publishing config uses a repository-derived Worker name and static assets, with no account/zone/domain binding. Destination sync runs before each build and changes only technical project identity and deployment base path; branding and Lead Service IDs remain separate customization. Creator credit is non-operational.
 
 - Run npm run audit:distribution after building. It scans current repository text/output for seller operational dependencies, credential patterns and tracked local artifacts. Pattern scanning is not proof of absence of every possible secret.
 - Distribute a clean archive of the current product revision, not the local workspace or .git directory. Exclude environment files, dependencies, built/QA output, credentials and logs. Git archive honors repository export exclusions.

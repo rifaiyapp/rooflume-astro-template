@@ -1,45 +1,39 @@
 import fs from "node:fs";
-import { execSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 
+const projectRoot = fileURLToPath(new URL("../", import.meta.url));
 const wranglerPath = new URL("../wrangler.jsonc", import.meta.url);
 const projectConfigPath = new URL("../project.config.json", import.meta.url);
 
 function getRepositoryName() {
-  const explicitWorkerName =
-    process.env.CLOUDFLARE_WORKER_NAME?.trim();
-
-  const explicitRepository =
-    process.env.CODEX_GITHUB_REPOSITORY ||
-    process.env.GITHUB_REPOSITORY;
-
-  if (explicitRepository) {
-    return explicitRepository.split("/").pop();
-  }
-
-  if (explicitWorkerName) {
-    return explicitWorkerName;
-  }
-
   try {
-    const remote = execSync("git remote get-url origin", {
+    const remote = execFileSync("git", ["remote", "get-url", "origin"], {
+      cwd: projectRoot,
       encoding: "utf8",
       stdio: ["ignore", "pipe", "ignore"],
     }).trim();
 
     const match = remote.match(
-      /github\.com[/:][^/]+\/([^/]+?)(?:\.git)?$/
+      /[/:]([a-zA-Z0-9][a-zA-Z0-9._-]*?)(?:\.git)?\/?$/
     );
 
-    return match?.[1] || null;
+    if (match) return match[1];
   } catch {
-    return null;
+    // Cloud checkouts may have no origin; use only explicit repository fallbacks.
   }
+
+  for (const value of [process.env.CODEX_GITHUB_REPOSITORY, process.env.GITHUB_REPOSITORY]) {
+    const match = value?.trim().match(/^[^/\s]+\/([a-zA-Z0-9][a-zA-Z0-9._-]*)$/);
+    if (match) return match[1];
+  }
+  return null;
 }
 
 function getBasePath(repositoryName) {
   if (!repositoryName) return "/";
 
-  if (repositoryName === "rooflume-astro-template") {
+  if (repositoryName.endsWith("-astro-template")) {
     return "/";
   }
 
@@ -60,18 +54,15 @@ if (!repositoryName) {
   process.exit(0);
 }
 
-const workerName =
-  process.env.CLOUDFLARE_WORKER_NAME?.trim() || repositoryName;
+const workerName = repositoryName.replace(/-astro-template$/, "").toLowerCase();
+
+if (!/^[a-z0-9][a-z0-9_-]{0,62}$/.test(workerName)) {
+  throw new Error("Destination repository does not produce a valid Worker name.");
+}
 
 const basePath =
-  process.env.DEPLOYMENT_BASE_PATH?.trim() ||
-  getBasePath(repositoryName);
-
-// Keep canonical master unchanged.
-if (repositoryName === "rooflume-astro-template") {
-  console.log("Destination sync skipped: canonical template repository.");
-  process.exit(0);
-}
+  repositoryName.endsWith("-astro-template") ? "/" :
+    process.env.DEPLOYMENT_BASE_PATH?.trim() || getBasePath(repositoryName);
 
 // Sync wrangler Worker name.
 const wranglerRaw = fs.readFileSync(wranglerPath, "utf8");
@@ -81,20 +72,21 @@ const wranglerUpdated = wranglerRaw.replace(
   `"name": "${workerName}"`
 );
 
-fs.writeFileSync(wranglerPath, wranglerUpdated);
+// Keep technical identity separate from visible branding and Lead Service IDs.
+const projectRaw = fs.readFileSync(projectConfigPath, "utf8");
+const projectConfig = JSON.parse(projectRaw);
+const projectChanged = projectConfig.name !== repositoryName ||
+  projectConfig.deployment?.basePath !== basePath;
 
-// Sync project deployment base path.
-const projectConfig = JSON.parse(
-  fs.readFileSync(projectConfigPath, "utf8")
-);
-
+projectConfig.name = repositoryName;
 projectConfig.deployment ??= {};
 projectConfig.deployment.basePath = basePath;
 
-fs.writeFileSync(
-  projectConfigPath,
-  `${JSON.stringify(projectConfig, null, 2)}\n`
-);
+if (wranglerUpdated !== wranglerRaw) fs.writeFileSync(wranglerPath, wranglerUpdated);
+if (projectChanged) {
+  const newline = projectRaw.includes("\r\n") ? "\r\n" : "\n";
+  fs.writeFileSync(projectConfigPath, `${JSON.stringify(projectConfig, null, 2)}\n`.replaceAll("\n", newline));
+}
 
 console.log(`Worker name synchronized: ${workerName}`);
 console.log(`Deployment base path synchronized: ${basePath}`);

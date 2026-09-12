@@ -7,7 +7,18 @@
 
 ## Your Cloudflare account/domain
 
-Static output is dist. No seller account ID, zone, route or domain is configured. The editable example Worker name rooflume in wrangler.jsonc is scoped to whichever account you authenticate. Choose a unique name in your copy. Wrangler is not a project dependency.
+Static output is dist. No seller account ID, zone, route or domain is configured. `npm run sync:destination` (also run automatically by prebuild) derives technical identity from the current Git `origin` repository name, regardless of account. It updates the Worker name in `wrangler.jsonc` and the repository name and deployment base path in `project.config.json`. Repeated runs leave already synchronized files untouched. Wrangler is not a project dependency.
+
+| Repository | Worker name | Base path |
+| --- | --- | --- |
+| rooflume-astro-template | rooflume | / |
+| rooftero-astro-template | rooftero | / |
+| vantoro-astro-template | vantoro | / |
+| plumbero-astro-template | plumbero | / |
+| shibga-roofing-lp-01 | shibga-roofing-lp-01 | /lp/roofing-01/ |
+| other destination names | repository name | / |
+
+Every `<brand>-astro-template` repository deploys at `/`. Other destinations retain the existing `DEPLOYMENT_BASE_PATH` override and Shibga LP rule. Worker names are lowercase. When no usable origin is available, `CODEX_GITHUB_REPOSITORY`, then `GITHUB_REPOSITORY`, can supply an explicit `owner/repository` fallback. Stale environment values cannot override origin; `CLOUDFLARE_WORKER_NAME` does not determine destination identity. Bind the copy's origin to its actual destination before building. Sync does not customize visible branding, logos, content, design or lead project IDs.
 
 In your own Cloudflare account, connect your destination repository to Workers Builds, choose main, build with `npm run build` and deploy with `npx wrangler deploy`. Use Node 22.12+ or 24 with npm 11. Set public form variables in that build environment. Alternatively authenticate locally to your own account, build and use the same deploy command. Confirm the target account; never reuse seller credentials. See [Cloudflare static-assets setup](https://developers.cloudflare.com/workers/static-assets/get-started/).
 
