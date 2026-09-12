@@ -64,3 +64,5 @@
 The approved implementation controls all details not enumerated here. Preserve 100% of page design, layout, content, responsive behavior, imagery, field structure, animations, typography, colors and functionality during Project Upgrade.
 
 Callback controls remain website (honeypot), name, phone, email, zip and message, in their existing order. Preserve validation, pending/error/success states, duplicate protection and the submitted event. Default submissions are non-sending demos with honest feedback; customer-configured live mode retains the approved pending/error/success behavior. Read docs/FORM-INTEGRATION.md before integrations. Common rebrand values live in src/config/site.ts.
+
+The thank-you page follows the home hero's photographic navy treatment, with a top-centered logo and viewport-centered confirmation. It reuses hero typography, eyebrow, gold button and responsive image crop, with all styling in global.css.

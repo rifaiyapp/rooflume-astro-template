@@ -76,7 +76,7 @@ try {
   release();
   await waitStatus('Thanks, Test! A Rooflume roofing specialist will call you shortly.');
   assert.equal(await page.locator('[name="name"]').inputValue(), '');
-  assert.equal(await page.locator('button[type="submit"]').textContent(), 'Get my free roof inspection');
+  assert.equal(await page.locator('button[type="submit"]').textContent(), 'Get Free Inspection');
   await submit();
   assert.equal(calls.length, 1);
   assert.equal(await page.evaluate(() => window.leadEvents), 1);

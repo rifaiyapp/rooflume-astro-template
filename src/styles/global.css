@@ -553,3 +553,12 @@ p { margin: 0; }
 .roofing-faq-intro { color: var(--navy); text-shadow: none; }
 .mobile-action-call { background-color: #137d43; }
 .nav-inner a:not(.active):is(:hover, :focus, :focus-visible) { background-color: var(--gold); }
+
+/* Confirmation page: reuse the home hero's media, overlay and controls. */
+.thank-you-page { position: relative; isolation: isolate; display: grid; min-height: 100vh; min-height: 100svh; align-items: center; padding-block: 145px; background: var(--navy); }
+.thank-you-page > .hero-media, .thank-you-page > .hero-shade { z-index: -1; }
+.thank-you-header { position: absolute; top: 1.35rem; inset-inline: 0; display: flex; justify-content: center; }
+.thank-you-content { text-align: center; }
+.thank-you-content h1 { color: var(--white); font-size: clamp(3.15rem, 8vw, 4.8rem); font-style: italic; }
+.thank-you-content > p:not(.eyebrow) { margin-inline: auto; }
+.thank-you-content .button { margin-top: 1.7rem; }
