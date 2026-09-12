@@ -41,7 +41,8 @@ function fixture(t, remote, overrides = {}) {
   project.name = 'old-template-identity';
   project.deployment.basePath = '/old-destination/';
   writeFileSync(join(directory, 'project.config.json'), JSON.stringify(project, null, 2).replaceAll('\n', '\r\n') + '\r\n');
-  writeFileSync(join(directory, 'wrangler.jsonc'), '// Preserve publishing comments.\r\n{\r\n  "name": "rooflume",\r\n  "assets": { "directory": "./dist" }\r\n}\r\n');
+  const originalPublishing = readFileSync(join(root, 'wrangler.jsonc'), 'utf8');
+  writeFileSync(join(directory, 'wrangler.jsonc'), '// Preserve publishing comments.\r\n' + originalPublishing);
   const protectedFiles = ['src/config/site.ts', 'src/config/lead.ts', 'src/pages/index.astro', 'src/styles/global.css'];
   for (const file of protectedFiles) {
     mkdirSync(dirname(join(directory, file)), { recursive: true });
@@ -58,6 +59,7 @@ function fixture(t, remote, overrides = {}) {
     assert.equal(JSON.parse(read('project.config.json')).deployment.basePath, basePath);
     assert.equal(read('wrangler.jsonc').match(/"name": "([^"]+)"/)[1], worker);
     assert.ok(read('wrangler.jsonc').startsWith('// Preserve publishing comments.\r\n'));
+    assert.equal(read('wrangler.jsonc'), '// Preserve publishing comments.\r\n' + originalPublishing.replace(/"name"\s*:\s*"[^"]+"/, `"name": "${worker}"`), 'Destination sync must preserve assets and Service Bindings');
     assert.deepEqual(JSON.parse(read('project.config.json')), {
       ...project, name: repository, deployment: { ...project.deployment, basePath },
     });

@@ -8,7 +8,7 @@ import { chromium } from 'playwright';
 const root = resolve(process.env.QA_DIST || 'dist');
 const server = createServer(async (req, res) => {
   const pathname = new URL(req.url, 'http://localhost').pathname;
-  const file = resolve(root, '.' + (pathname === '/' ? '/index.html' : pathname));
+  const file = resolve(root, '.' + (pathname.endsWith('/') ? pathname + 'index.html' : pathname));
   if (!file.startsWith(root + '/' ) && !file.startsWith(root + '\\')) { res.writeHead(403).end(); return; }
   try {
     const body = await readFile(file);
@@ -19,7 +19,7 @@ const server = createServer(async (req, res) => {
 await new Promise(done => server.listen(0, '127.0.0.1', done));
 const base = `http://127.0.0.1:${server.address().port}`;
 const browser = await chromium.launch({ headless: true });
-const endpoint = 'https://forms.example.test/submit';
+const endpoint = base + '/api/lead';
 const values = { name: 'Test Homeowner', phone: '(818) 555-0147', email: 'test@example.com', zip: '90210-1234', message: 'Please inspect my roof.\nThank you.' };
 const error = "We couldn't send your request. Please try again.";
 try {
@@ -28,6 +28,8 @@ try {
   let respond;
   await page.route('**/*', route => route.request().url().startsWith(base) ? route.continue() : route.abort());
   await page.route(endpoint, async route => {
+    assert.equal(route.request().method(), 'POST');
+    assert.equal(route.request().headers()['content-type'], 'application/json');
     calls.push(route.request().postDataJSON());
     await respond(route);
   });
@@ -74,6 +76,7 @@ try {
   assert.ok(elapsed <= await page.evaluate(() => Math.ceil(performance.now())));
   assert.deepEqual(calls[0], {
     project_id: 'qa-project', form_id: 'qa-form', fields: values, website: '',
+    metadata: calls[0].meta, submit_elapsed_ms: elapsed, honeypot: '',
     meta: { page_url: page.url(), utm_source: 'google', utm_medium: 'cpc', utm_campaign: 'roof repair', utm_term: 'local', utm_content: 'hero', referrer: await page.evaluate(() => document.referrer), submit_elapsed_ms: elapsed },
   });
   release();
@@ -83,6 +86,8 @@ try {
   await submit();
   assert.equal(calls.length, 1);
   assert.equal(await page.evaluate(() => window.leadEvents), 1);
+  await page.waitForURL(base + '/thank-you/');
+  assert.equal(await page.locator('h1').count(), 1);
 
   for (const [label, handler] of [
     ['API rejection', route => route.fulfill({ json: { success: false, detail: 'private backend error' } })],
@@ -114,6 +119,7 @@ try {
   await waitStatus('Thanks, Test! A Rooflume roofing specialist will call you shortly.');
   assert.equal(calls.length, 2);
   assert.equal(calls[1].website, 'bot.example');
+  assert.equal(calls[1].honeypot, 'bot.example');
   assert.equal('website' in calls[1].fields, false);
   assert.deepEqual(calls[1].fields.extra, ['one', 'two']);
   console.log('PASS success, validation, payload, UTMs, referrer, honeypot, dynamic/repeated fields, duplicate prevention and retry');

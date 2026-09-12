@@ -7,7 +7,7 @@ run(['qa/demo-form-check.mjs']);
 // Separate fixtures: production dist always stays the non-sending product build.
 const fixture='tmp/form-live-dist';
 run(['node_modules/astro/bin/astro.mjs','build','--outDir',fixture],{
-  PUBLIC_LEAD_MODE:'live',PUBLIC_LEAD_ENDPOINT:'https://forms.example.test/submit',PUBLIC_LEAD_PROJECT_ID:'qa-project',PUBLIC_LEAD_FORM_ID:'qa-form',
+  PUBLIC_LEAD_MODE:'live',PUBLIC_LEAD_ENDPOINT:'',PUBLIC_LEAD_PROJECT_ID:'qa-project',PUBLIC_LEAD_FORM_ID:'qa-form',
 });
 run(['qa/lead-form-check.mjs'],{QA_DIST:fixture});
 run(['node_modules/astro/bin/astro.mjs','build','--outDir','tmp/form-invalid-dist'],{

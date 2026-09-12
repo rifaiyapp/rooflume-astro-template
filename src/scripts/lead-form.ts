@@ -53,21 +53,28 @@ export function connectLeadForm(form: HTMLFormElement) {
       fields[key] = values.length === 1 ? values[0] : values;
     }
     const params = new URLSearchParams(window.location.search);
+    const submitElapsedMs = Math.round(performance.now() - connectedAt);
+    const honeypot = String(data.get('website') || '');
+    const metadata = {
+      page_url: window.location.href,
+      utm_source: params.get('utm_source') || '',
+      utm_medium: params.get('utm_medium') || '',
+      utm_campaign: params.get('utm_campaign') || '',
+      utm_term: params.get('utm_term') || '',
+      utm_content: params.get('utm_content') || '',
+      referrer: document.referrer,
+      submit_elapsed_ms: submitElapsedMs,
+    };
     const payload = {
       project_id: leadConfig.projectId,
       form_id: leadConfig.formId,
       fields,
-      meta: {
-        page_url: window.location.href,
-        utm_source: params.get('utm_source') || '',
-        utm_medium: params.get('utm_medium') || '',
-        utm_campaign: params.get('utm_campaign') || '',
-        utm_term: params.get('utm_term') || '',
-        utm_content: params.get('utm_content') || '',
-        referrer: document.referrer,
-        submit_elapsed_ms: Math.round(performance.now() - connectedAt),
-      },
-      website: String(data.get('website') || ''),
+      metadata,
+      submit_elapsed_ms: submitElapsedMs,
+      honeypot,
+      // Retain the existing aliases for consumers of the original payload.
+      meta: metadata,
+      website: honeypot,
     };
     const originalText = button.textContent;
     submitting = true;
@@ -85,6 +92,7 @@ export function connectLeadForm(form: HTMLFormElement) {
         body: JSON.stringify(payload),
         signal: controller.signal,
         credentials: 'omit',
+        mode: 'same-origin',
         redirect: 'error',
       });
       if (!response.ok) throw new Error('Submission failed');
