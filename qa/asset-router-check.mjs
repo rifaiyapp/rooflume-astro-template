@@ -31,7 +31,7 @@ async function rejected(input, status, binding = noGateway) {
   return response;
 }
 
-for (const path of ['/api/lead', '/lp/roofing-01/api/lead']) {
+for (const path of ['/api/lead', '/rooflume/api/lead', '/lp/roofing-01/api/lead', '/templates/service/roofing/api/lead']) {
   test(`POST ${path} awaits binding, preserves exact JSON and safe browser context`, async () => {
     let received;
     let release;
@@ -118,29 +118,7 @@ test('gateway rejection, redirect, malformed response and exceptions never leak'
     [502, () => Response.json({ success: true, data: 'x'.repeat(32 * 1024) })],
   ]) await rejected(request(), status, { fetch: makeResponse });
 });
-test('normal static routing, fallback, rewriting and security headers are preserved', async () => {
-  for (const path of ['/', '/thank-you/', '/assets/roof.webp', '/_astro/site.abcdefgh.js', '/lp/roofing-01/', '/lp/roofing-01/thank-you/', '/lp/roofing-01/assets/roof.webp', '/missing']) {
-    const seen = [];
-    const input = new Request(origin + path);
-    const response = await router.fetch(input, { LEAD_GATEWAY: noGateway, ASSETS: { fetch(assetRequest) {
-      seen.push(new URL(assetRequest.url).pathname);
-      assert.equal(assetRequest.method, 'GET');
-      return new Response('<img src="/assets/roof.webp">', {
-        status: seen.at(-1).startsWith('/lp/') || path === '/missing' ? 404 : 200,
-        headers: { 'content-type': 'text/html', 'x-content-type-options': 'nosniff', 'content-security-policy': "base-uri 'self'; object-src 'none'; frame-ancestors 'self'" },
-      });
-    } } });
-    assert.equal(seen[0], path);
-    if (path.startsWith('/lp/')) {
-      assert.equal(seen.length, 2);
-      assert.equal(seen[1], path.replace('/lp/roofing-01', '').replace(/(?<=.)\/$/, ''));
-      assert.match(await response.text(), /src="\/lp\/roofing-01\/assets\/roof.webp"/);
-    } else assert.equal(seen.length, 1);
-    assert.equal(response.headers.get('x-content-type-options'), 'nosniff');
-    assert.match(response.headers.get('content-security-policy'), /frame-ancestors 'self'/);
-    assert.equal(response.headers.get('cache-control'), path === '/missing' ? 'no-store' : path.startsWith('/_astro/') ? 'public, max-age=31536000, immutable' : 'public, max-age=0, must-revalidate');
-  }
-});
+import './runtime-mount-check.mjs';
 
 test('the same form build selects the thank-you route from the runtime pathname and configured deployment base', async () => {
   const source = readFileSync(new URL('../src/scripts/lead-form.ts', import.meta.url), 'utf8');

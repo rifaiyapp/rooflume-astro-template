@@ -1,8 +1,5 @@
-import project from "../project.config.json" with { type: "json" };
-
 const REVALIDATE = "public, max-age=0, must-revalidate";
 const MAX_LEAD_BYTES = 32 * 1024;
-const configuredLeadPath = `${(project.deployment?.basePath || "/").replace(/\/$/, "")}/api/lead`;
 
 function leadResponse(status, success = false, extraHeaders = {}) {
   return Response.json(success ? { success: true } : {
@@ -98,26 +95,35 @@ async function submitLead(request, env, url) {
   }
 }
 
-function getPrefix(pathname) {
-  const parts = pathname.split("/").filter(Boolean);
-
-  if (parts.length < 2) {
-    return "";
+function* mountedAssets(pathname) {
+  // Cloudflare does not pass the matched route prefix to the Worker. Recognize
+  // reserved suffixes first, then try static file suffixes at segment boundaries.
+  // Missing files/API paths must never fall through to the landing page.
+  const reserved = /\/(?:_astro|assets|api)(?:\/|$)/.exec(pathname);
+  if (reserved) {
+    if (reserved.index > 0) {
+      yield { prefix: pathname.slice(0, reserved.index), pathname: pathname.slice(reserved.index) };
+    }
+    return;
   }
-
-  return `/${parts[0]}/${parts[1]}`;
-}
-
-function stripPrefix(pathname) {
-  const parts = pathname.split("/").filter(Boolean);
-
-  if (parts.length < 2) {
-    return pathname;
+  const thankYou = /\/thank-you\/?$/.exec(pathname);
+  if (thankYou) {
+    if (thankYou.index > 0) {
+      yield { prefix: pathname.slice(0, thankYou.index), pathname: "/thank-you/" };
+    }
+    return;
   }
-
-  const remaining = parts.slice(2).join("/");
-
-  return remaining ? `/${remaining}` : "/";
+  for (let slash = pathname.indexOf("/", 1); slash !== -1; slash = pathname.indexOf("/", slash + 1)) {
+    if (slash < pathname.length - 1) {
+      yield { prefix: pathname.slice(0, slash), pathname: pathname.slice(slash) };
+    }
+  }
+  // An otherwise unknown extensionless document path is a runtime mount root.
+  // This supports any mount depth without build-time domain or route settings.
+  const prefix = pathname.replace(/\/$/, "");
+  if (prefix && !prefix.split("/").at(-1).includes(".")) {
+    yield { prefix, pathname: "/" };
+  }
 }
 
 function withCacheHeaders(response, pathname) {
@@ -184,6 +190,7 @@ async function rewriteResponse(response, prefix) {
 
   const headers = new Headers(response.headers);
   headers.delete("content-length");
+  headers.delete("etag");
 
   return new Response(body, {
     status: response.status,
@@ -196,9 +203,8 @@ export default {
   async fetch(request, env) {
     const originalUrl = new URL(request.url);
 
-    // Support the configured build base and the existing two-segment LP alias.
-    if (originalUrl.pathname === "/api/lead" || originalUrl.pathname === configuredLeadPath ||
-        stripPrefix(originalUrl.pathname) === "/api/lead") {
+    // Dispatch before ASSETS so every mount uses the same fail-closed handler.
+    if (/\/api\/lead$/.test(originalUrl.pathname)) {
       return submitLead(request, env, originalUrl);
     }
 
@@ -209,22 +215,20 @@ export default {
       return withCacheHeaders(response, originalUrl.pathname);
     }
 
-    const prefix = getPrefix(originalUrl.pathname);
-
-    if (!prefix) {
-      return withCacheHeaders(response, originalUrl.pathname);
+    if (request.method === "GET" || request.method === "HEAD") {
+      for (const mount of mountedAssets(originalUrl.pathname)) {
+        const rewrittenUrl = new URL(originalUrl);
+        rewrittenUrl.pathname = mount.pathname;
+        const candidate = await fetchAsset(request, env, rewrittenUrl);
+        if (candidate.status === 404) {
+          await candidate.body?.cancel();
+          continue;
+        }
+        await response.body?.cancel();
+        response = await rewriteResponse(candidate, mount.prefix);
+        return withCacheHeaders(response, mount.pathname);
+      }
     }
-
-    // Nested deployment:
-    // /lp/example/              -> /
-    // /lp/example/_astro/x     -> /_astro/x
-    // /lp/example/assets/x     -> /assets/x
-    const rewrittenUrl = new URL(originalUrl);
-    rewrittenUrl.pathname = stripPrefix(originalUrl.pathname);
-
-    response = await fetchAsset(request, env, rewrittenUrl);
-    response = await rewriteResponse(response, prefix);
-
-    return withCacheHeaders(response, rewrittenUrl.pathname);
+    return withCacheHeaders(response, originalUrl.pathname);
   },
 };
