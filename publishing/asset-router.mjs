@@ -149,7 +149,19 @@ function withCacheHeaders(response, pathname) {
 }
 
 async function fetchAsset(request, env, url) {
-  return env.ASSETS.fetch(new Request(url, request));
+  return env.ASSETS.fetch(new Request(new Request(url, request), { redirect: "manual" }));
+}
+
+function isRootAssetRedirect(response, url) {
+  if (![301, 302, 303, 307, 308].includes(response.status)) return false;
+  const location = response.headers.get("location");
+  if (!location) return false;
+  try {
+    const target = new URL(location, url);
+    return target.origin === url.origin && target.pathname === "/";
+  } catch {
+    return false;
+  }
 }
 
 function prefixLocalAssets(text, prefix) {
@@ -210,6 +222,20 @@ export default {
 
     // Normal root deployment first.
     let response = await fetchAsset(request, env, originalUrl);
+
+    // The asset binding may canonicalize an unknown extensionless path to /.
+    // Resolve that mount against the root asset internally instead of letting
+    // its Location header take the browser outside the Worker's route.
+    if ((request.method === "GET" || request.method === "HEAD") && isRootAssetRedirect(response, originalUrl)) {
+      const mount = [...mountedAssets(originalUrl.pathname)].find(asset => asset.pathname === "/");
+      if (mount) {
+        const rootUrl = new URL(originalUrl);
+        rootUrl.pathname = "/";
+        await response.body?.cancel();
+        response = await rewriteResponse(await fetchAsset(request, env, rootUrl), mount.prefix);
+        return withCacheHeaders(response, "/");
+      }
+    }
 
     if (response.status !== 404) {
       return withCacheHeaders(response, originalUrl.pathname);

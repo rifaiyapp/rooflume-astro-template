@@ -32,6 +32,45 @@ function assets(seen = []) {
     });
   } };
 }
+
+for (const prefix of ['/rooflume', '/lp/roofing-01', '/templates/service/roofing']) {
+  test(`asset canonicalization cannot redirect ${prefix} to the origin root`, async () => {
+    for (const method of ['GET', 'HEAD']) {
+      for (const status of [301, 302, 303, 307, 308]) {
+        for (const location of ['/', origin, origin + '/']) {
+          const seen = [];
+          const input = new Request(origin + prefix + '?source=test', { method });
+          const response = await router.fetch(input, { ASSETS: { fetch(request) {
+            assert.equal(request.redirect, 'manual');
+            if (new URL(request.url).pathname === prefix) {
+              return new Response(null, { status, headers: { location } });
+            }
+            return assets(seen).fetch(request);
+          } } });
+          assert.equal(response.status, 200);
+          assert.equal(response.headers.get('location'), null);
+          assert.equal(input.url, origin + prefix + '?source=test');
+          assert.deepEqual(seen, [{ path: '/', search: '?source=test', method }]);
+          assert.equal(response.headers.get('x-robots-tag'), 'noindex,nofollow,noarchive,nosnippet');
+          assert.equal(await response.text(), method === 'HEAD' ? '' : files.get('/')[1]
+            .replaceAll('/assets/', prefix + '/assets/').replaceAll('/_astro/', prefix + '/_astro/').replaceAll('/favicon', prefix + '/favicon'));
+        }
+      }
+    }
+  });
+}
+
+test('root and static file redirects retain their original behavior', async () => {
+  for (const path of ['/', '/favicon.svg', '/assets/missing.webp', '/thank-you']) {
+    const target = path === '/thank-you' ? '/thank-you/' : '/';
+    const response = await router.fetch(new Request(origin + path), {
+      ASSETS: { fetch: () => new Response(null, { status: 301, headers: { location: target } }) },
+    });
+    assert.equal(response.status, 301);
+    assert.equal(response.headers.get('location'), target);
+  }
+});
+
 for (const prefix of ['', '/rooflume', '/roofing', '/rooflume/hd', '/lp/roofing-01', '/templates/service/roofing']) {
   for (const suffix of ['/', ...(prefix ? ['', '/thank-you'] : []), '/thank-you/']) {
     const path = prefix + suffix;

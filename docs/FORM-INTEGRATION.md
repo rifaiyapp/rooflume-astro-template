@@ -12,7 +12,7 @@ PUBLIC_LEAD_PROJECT_ID=your-project
 PUBLIC_LEAD_FORM_ID=your-form
 ```
 
-Set live mode and both identifiers, then rebuild. Blank identifiers fail closed with a call-us message. Omitting live mode keeps the non-sending demo. The production browser endpoint is always the same-origin `/api/lead`, prefixed with the deployment base path when present. `PUBLIC_LEAD_ENDPOINT` is no longer used.
+Set live mode and both identifiers, then rebuild. Blank identifiers fail closed with a call-us message. Omitting live mode keeps the non-sending demo. The browser resolves the same-origin endpoint from the LP's runtime pathname on submission: `/` uses `/api/lead`, while `/roofing` and `/roofing/` use `/roofing/api/lead`. Any mount depth works with the same compiled build; Astro's build base does not select the endpoint. Query strings and fragments do not affect it. `PUBLIC_LEAD_ENDPOINT` is no longer used.
 
 Configuration is in src/config/lead.ts; behavior is in src/scripts/lead-form.ts. The Publishing Service Worker handles `/api/lead` in publishing/asset-router.mjs and calls `/v1/submit` through the server-only `LEAD_GATEWAY` Service Binding declared in wrangler.jsonc. Provision the shared Lead Service in the destination Cloudflare account and register the destination origin and identifiers with it before enabling live mode. Destination sync preserves this binding while updating Worker identity and the build base path. A destination copy must configure its own authorized Lead Service; no public endpoint fallback exists. Astro's static preview alone does not run this Worker route.
 

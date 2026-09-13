@@ -5,6 +5,15 @@ import { runInNewContext } from 'node:vm';
 import ts from 'typescript';
 import router from '../publishing/asset-router.mjs';
 
+function loadLeadConfig(base, mode = 'live') {
+  const source = readFileSync(new URL('../src/config/lead.ts', import.meta.url), 'utf8');
+  const env = { BASE_URL: base, PUBLIC_LEAD_MODE: mode, PUBLIC_LEAD_PROJECT_ID: 'qa-project', PUBLIC_LEAD_FORM_ID: 'qa-form' };
+  const compiled = ts.transpile(source.replaceAll('import.meta.env', JSON.stringify(env)), { module: ts.ModuleKind.CommonJS });
+  const exports = {};
+  new Function('exports', compiled)(exports);
+  return exports;
+}
+
 const origin = 'https://roofing.example.test';
 const metadata = { page_url: origin + '/', referrer: '', utm_source: 'search', submit_elapsed_ms: 3456 };
 const payload = {
@@ -138,14 +147,12 @@ test('the same form build selects the thank-you route from the runtime pathname 
       require(id) {
         if (id === '../../project.config.json') return { deployment: { basePath: configuredBase } };
         if (id === '../config/site') return { site: { name: 'Test' } };
-        if (id === '../config/lead') return {
-          leadConfig: { endpoint: '/api/lead', timeoutMs: 15000 }, hasLiveLeadService: () => true,
-        };
+        if (id === '../config/lead') return loadLeadConfig(configuredBase);
         assert.fail(`Unexpected import: ${id}`);
       },
       async fetch(endpoint, options) {
         requests++;
-        assert.equal(endpoint, '/api/lead');
+        assert.equal(endpoint, window.location.pathname.replace(/\/$/, '') + '/api/lead');
         assert.equal(options.mode, 'same-origin');
         assert.equal(options.redirect, 'error');
         assert.equal(options.credentials, 'omit');
@@ -155,6 +162,9 @@ test('the same form build selects the thank-you route from the runtime pathname 
     // Reuse the compiled module with both origins and different runtime paths.
     for (const [url, expected] of [
       ['https://worker.example.workers.dev/', '/thank-you/'],
+      ['https://templates.example.test/rooflume', '/thank-you/'],
+      ['https://templates.example.test/rooflume/', '/thank-you/'],
+      ['https://templates.example.test/templates/service/roofing/', '/thank-you/'],
       [`https://templates.example.test${base}`, `${base}thank-you/`],
       [`https://templates.example.test${base}details/?source=test#form`, `${base}thank-you/`],
       ...(base === '/' ? [] : [
@@ -192,7 +202,7 @@ test('the same form build selects the thank-you route from the runtime pathname 
     }
   }
 });
-test('frontend configuration uses the same origin under root and nested bases without an endpoint variable', () => {
+test('the same frontend configuration resolves endpoints from runtime paths regardless of build base', () => {
   const source = readFileSync(new URL('../src/config/lead.ts', import.meta.url), 'utf8');
   assert.doesNotMatch(source, /PUBLIC_LEAD_ENDPOINT|https?:\/\//);
   const client = readFileSync(new URL('../src/scripts/lead-form.ts', import.meta.url), 'utf8');
@@ -200,11 +210,15 @@ test('frontend configuration uses the same origin under root and nested bases wi
   assert.doesNotMatch(client, /https?:\/\//);
   for (const base of ['/', '/lp/roofing-01/', '/campaign/']) {
     for (const mode of ['live', 'demo']) {
-      const env = { BASE_URL: base, PUBLIC_LEAD_MODE: mode, PUBLIC_LEAD_PROJECT_ID: 'qa-project', PUBLIC_LEAD_FORM_ID: 'qa-form' };
-      const compiled = ts.transpile(source.replaceAll('import.meta.env', JSON.stringify(env)), { module: ts.ModuleKind.CommonJS });
-      const exports = {};
-      new Function('exports', compiled)(exports);
-      assert.equal(exports.leadConfig.endpoint, base + 'api/lead');
+      const exports = loadLeadConfig(base, mode);
+      for (const [path, expected] of [
+        ['/', '/api/lead'], ['/index.html', '/api/lead'],
+        ['/rooflume', '/rooflume/api/lead'], ['/rooflume/', '/rooflume/api/lead'],
+        ['/lp/roofing-01', '/lp/roofing-01/api/lead'], ['/lp/roofing-01/', '/lp/roofing-01/api/lead'],
+        ['/templates/service/roofing/', '/templates/service/roofing/api/lead'],
+        ['/rooflume/ddd', '/rooflume/ddd/api/lead'],
+        ['//rooflume//', '/rooflume/api/lead'],
+      ]) assert.equal(exports.resolveLeadEndpoint(path), expected);
       assert.equal(exports.hasLiveLeadService(), mode === 'live');
     }
   }

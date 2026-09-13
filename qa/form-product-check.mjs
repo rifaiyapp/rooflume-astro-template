@@ -10,6 +10,7 @@ run(['node_modules/astro/bin/astro.mjs','build','--outDir',fixture],{
   PUBLIC_LEAD_MODE:'live',PUBLIC_LEAD_ENDPOINT:'',PUBLIC_LEAD_PROJECT_ID:'qa-project',PUBLIC_LEAD_FORM_ID:'qa-form',
 });
 run(['qa/lead-form-check.mjs'],{QA_DIST:fixture});
+run(['qa/runtime-form-check.mjs'],{QA_DIST:fixture});
 run(['node_modules/astro/bin/astro.mjs','build','--outDir','tmp/form-invalid-dist'],{
   PUBLIC_LEAD_MODE:'live',PUBLIC_LEAD_ENDPOINT:'',PUBLIC_LEAD_PROJECT_ID:'',PUBLIC_LEAD_FORM_ID:'',
 });

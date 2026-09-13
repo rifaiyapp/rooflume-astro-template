@@ -1,4 +1,4 @@
-import { leadConfig, hasLiveLeadService } from '../config/lead';
+import { leadConfig, hasLiveLeadService, resolveLeadEndpoint } from '../config/lead';
 import { site } from '../config/site';
 import project from '../../project.config.json';
 
@@ -89,7 +89,7 @@ export function connectLeadForm(form: HTMLFormElement) {
     const timeout = window.setTimeout(() => controller.abort(), leadConfig.timeoutMs);
     try {
       // Never automatically retry: a lost response may still represent an accepted lead.
-      const response = await fetch(leadConfig.endpoint, {
+      const response = await fetch(resolveLeadEndpoint(window.location.pathname), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
