@@ -1,5 +1,15 @@
+import { resolveRuntimeMount } from "../src/utils/runtime-mount.mjs";
+
 const REVALIDATE = "public, max-age=0, must-revalidate";
 const MAX_LEAD_BYTES = 32 * 1024;
+const SECURITY_HEADERS = {
+  "X-Content-Type-Options": "nosniff",
+  "X-Robots-Tag": "noindex,nofollow,noarchive,nosnippet",
+  "X-Frame-Options": "SAMEORIGIN",
+  "Referrer-Policy": "strict-origin-when-cross-origin",
+  "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+  "Content-Security-Policy": "default-src 'none'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'",
+};
 
 function leadResponse(status, success = false, extraHeaders = {}) {
   return Response.json(success ? { success: true } : {
@@ -9,12 +19,7 @@ function leadResponse(status, success = false, extraHeaders = {}) {
     status,
     headers: {
       "Cache-Control": "no-store",
-      "X-Content-Type-Options": "nosniff",
-      "X-Robots-Tag": "noindex,nofollow,noarchive,nosnippet",
-      "X-Frame-Options": "SAMEORIGIN",
-      "Referrer-Policy": "strict-origin-when-cross-origin",
-      "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
-      "Content-Security-Policy": "default-src 'none'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'",
+      ...SECURITY_HEADERS,
       ...extraHeaders,
     },
   });
@@ -109,7 +114,7 @@ function* mountedAssets(pathname) {
   const thankYou = /\/thank-you\/?$/.exec(pathname);
   if (thankYou) {
     if (thankYou.index > 0) {
-      yield { prefix: pathname.slice(0, thankYou.index), pathname: "/thank-you/" };
+      yield { prefix: resolveRuntimeMount(pathname).slice(0, -1), pathname: "/thank-you/" };
     }
     return;
   }
@@ -120,7 +125,7 @@ function* mountedAssets(pathname) {
   }
   // An otherwise unknown extensionless document path is a runtime mount root.
   // This supports any mount depth without build-time domain or route settings.
-  const prefix = pathname.replace(/\/$/, "");
+  const prefix = resolveRuntimeMount(pathname).slice(0, -1);
   if (prefix && !prefix.split("/").at(-1).includes(".")) {
     yield { prefix, pathname: "/" };
   }
@@ -218,6 +223,18 @@ export default {
     // Dispatch before ASSETS so every mount uses the same fail-closed handler.
     if (/\/api\/lead$/.test(originalUrl.pathname)) {
       return submitLead(request, env, originalUrl);
+    }
+
+    const mountBase = resolveRuntimeMount(originalUrl.pathname);
+    const mountRootWithoutSlash = originalUrl.pathname === mountBase.slice(0, -1) &&
+      !/\/(?:_astro|assets|api)(?:\/|$)|\.[^/]*$/.test(originalUrl.pathname);
+    if ((request.method === "GET" || request.method === "HEAD") && mountRootWithoutSlash) {
+      // Canonicalize before ASSETS can redirect an unknown path to the origin
+      // root. An origin-relative Location preserves the host and exact query.
+      return withCacheHeaders(new Response(null, {
+        status: 308,
+        headers: { ...SECURITY_HEADERS, Location: mountBase + originalUrl.search },
+      }), originalUrl.pathname);
     }
 
     // Normal root deployment first.

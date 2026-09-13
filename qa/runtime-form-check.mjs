@@ -63,10 +63,18 @@ try {
       const page = await context.newPage();
       calls = [];
       outside = [];
-      const pageUrl = base + mount + slash + '?utm_source=runtime#callback';
-      const response = await page.goto(pageUrl, { waitUntil: 'networkidle' });
+      const requestedUrl = base + mount + slash + '?utm_source=runtime#callback';
+      const pageUrl = base + mount + '/?utm_source=runtime#callback';
+      const response = await page.goto(requestedUrl, { waitUntil: 'networkidle' });
       assert.equal(response.status(), 200);
       assert.equal(page.url(), pageUrl);
+      const redirect = response.request().redirectedFrom();
+      if (mount && !slash) {
+        assert.ok(redirect, 'No-slash mount must redirect to its slash variant');
+        const canonical = await redirect.response();
+        assert.equal(canonical.status(), 308);
+        assert.equal(canonical.headers().location, mount + '/?utm_source=runtime');
+      } else assert.equal(redirect, null);
       await page.waitForFunction(() => document.querySelector('#callback').dataset.leadConnected);
       await page.evaluate(async () => {
         document.querySelectorAll('img').forEach(image => { image.loading = 'eager'; });
@@ -91,9 +99,12 @@ try {
       assert.equal(payload.metadata.utm_source, 'runtime');
       assert.ok(payload.submit_elapsed_ms > 0);
       assert.deepEqual(outside, []);
-      // The existing delayed thank-you behavior is outside this regression.
+      await page.waitForURL(base + mount + '/thank-you/');
+      assert.equal(await page.locator('h1').count(), 1);
+      assert.equal((await page.request.get(page.url())).status(), 200);
+      assert.deepEqual(outside, [], 'Thank-you navigation must stay inside the Worker mount');
       await context.close();
-      console.log(`PASS compiled LP, assets and protected form submission at ${mount + slash}`);
+      console.log(`PASS compiled LP, canonicalization, protected submission and thank-you at ${mount + slash}`);
     }
   }
 } finally {

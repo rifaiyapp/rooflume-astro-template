@@ -1,8 +1,6 @@
-import { leadConfig, hasLiveLeadService, resolveLeadEndpoint } from '../config/lead';
+import { leadConfig, hasLiveLeadService } from '../config/lead';
 import { site } from '../config/site';
-import project from '../../project.config.json';
-
-const deploymentBasePath = (project.deployment?.basePath || '/').replace(/\/?$/, '/');
+import { resolveRuntimeMount } from '../utils/runtime-mount.mjs';
 
 export function connectLeadForm(form: HTMLFormElement) {
   if (form.dataset.leadConnected) return;
@@ -47,6 +45,8 @@ export function connectLeadForm(form: HTMLFormElement) {
       return;
     }
 
+    // Capture the submission's mount once, including across the delayed redirect.
+    const mountBase = resolveRuntimeMount(window.location.pathname);
     const data = new FormData(form);
     // Read every successful named control; preserve repeated names as arrays.
     const fields: Record<string, FormDataEntryValue | FormDataEntryValue[]> = Object.create(null);
@@ -89,7 +89,7 @@ export function connectLeadForm(form: HTMLFormElement) {
     const timeout = window.setTimeout(() => controller.abort(), leadConfig.timeoutMs);
     try {
       // Never automatically retry: a lost response may still represent an accepted lead.
-      const response = await fetch(resolveLeadEndpoint(window.location.pathname), {
+      const response = await fetch(`${mountBase}api/lead`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -108,11 +108,7 @@ export function connectLeadForm(form: HTMLFormElement) {
       form.dispatchEvent(new CustomEvent('rooflume:lead-submitted', { detail: fields, bubbles: true }));
 
       window.setTimeout(() => {
-        const pathname = window.location.pathname;
-        const basePath = pathname === deploymentBasePath.slice(0, -1) || pathname.startsWith(deploymentBasePath)
-          ? deploymentBasePath
-          : '/';
-        window.location.href = `${basePath}thank-you/`;
+        window.location.href = `${mountBase}thank-you/`;
       }, 800);
     } catch {
       status.textContent = "We couldn't send your request. Please try again.";

@@ -34,26 +34,22 @@ function assets(seen = []) {
 }
 
 for (const prefix of ['/rooflume', '/lp/roofing-01', '/templates/service/roofing']) {
-  test(`asset canonicalization cannot redirect ${prefix} to the origin root`, async () => {
-    for (const method of ['GET', 'HEAD']) {
-      for (const status of [301, 302, 303, 307, 308]) {
-        for (const location of ['/', origin, origin + '/']) {
-          const seen = [];
-          const input = new Request(origin + prefix + '?source=test', { method });
-          const response = await router.fetch(input, { ASSETS: { fetch(request) {
-            assert.equal(request.redirect, 'manual');
-            if (new URL(request.url).pathname === prefix) {
-              return new Response(null, { status, headers: { location } });
-            }
-            return assets(seen).fetch(request);
+  test(`GET/HEAD ${prefix} canonicalizes before asset redirects and retains host/query`, async () => {
+    for (const host of [origin, 'https://worker.example.workers.dev']) {
+      for (const method of ['GET', 'HEAD']) {
+        for (const query of ['', '?source=test&next=%2Felsewhere%2F']) {
+          const input = new Request(host + prefix + query, { method });
+          const response = await router.fetch(input, { ASSETS: { fetch() {
+            assert.fail('Mount canonicalization must happen before the asset binding');
           } } });
-          assert.equal(response.status, 200);
-          assert.equal(response.headers.get('location'), null);
-          assert.equal(input.url, origin + prefix + '?source=test');
-          assert.deepEqual(seen, [{ path: '/', search: '?source=test', method }]);
+          assert.equal(response.status, 308);
+          assert.equal(response.headers.get('location'), prefix + '/' + query);
+          assert.equal(new URL(response.headers.get('location'), input.url).origin, host);
+          assert.equal(await response.text(), '');
           assert.equal(response.headers.get('x-robots-tag'), 'noindex,nofollow,noarchive,nosnippet');
-          assert.equal(await response.text(), method === 'HEAD' ? '' : files.get('/')[1]
-            .replaceAll('/assets/', prefix + '/assets/').replaceAll('/_astro/', prefix + '/_astro/').replaceAll('/favicon', prefix + '/favicon'));
+          assert.equal(response.headers.get('x-content-type-options'), 'nosniff');
+          assert.match(response.headers.get('content-security-policy'), /frame-ancestors 'self'/);
+          assert.equal(response.headers.get('cache-control'), 'public, max-age=0, must-revalidate');
         }
       }
     }
@@ -72,7 +68,7 @@ test('root and static file redirects retain their original behavior', async () =
 });
 
 for (const prefix of ['', '/rooflume', '/roofing', '/rooflume/hd', '/lp/roofing-01', '/templates/service/roofing']) {
-  for (const suffix of ['/', ...(prefix ? ['', '/thank-you'] : []), '/thank-you/']) {
+  for (const suffix of ['/', ...(prefix ? ['/thank-you'] : []), '/thank-you/']) {
     const path = prefix + suffix;
     test(`GET ${path} serves the correct page without redirecting`, async () => {
       const seen = [];
