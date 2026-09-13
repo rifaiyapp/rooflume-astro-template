@@ -3,7 +3,6 @@
   "name": "rooflume",
   "compatibility_date": "2026-09-06",
   "main": "publishing/asset-router.mjs",
-  "keep_vars": true,
   "services": [
     { "binding": "LEAD_GATEWAY", "service": "lead-gateway" }
   ],

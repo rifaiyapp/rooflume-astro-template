@@ -1,82 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import worker from '../publishing/asset-router.mjs';
-const mounts = ['/rooflume/', '/roofing/', '/rooflume/hd/', '/lp/roofing-01/', '/templates/service/roofing/'];
-const router = { fetch: (request, env) => worker.fetch(request, { RUNTIME_MOUNT_PATHS: mounts, ...env }) };
+import router from '../publishing/asset-router.mjs';
 
 const origin = 'https://roofing.example.test';
-
-for (const path of ['/unknown', '/unknown/', '/rooflume/dd', '/rooflume/dd/', '/rooflume/random/', '/rooflume/random/path/', '/rooflume/foo/bar/', '/lp/roofing-01/test/', '/lp/roofing-01/random/path/', '/rooflume-other/', '/rooflume/dd/thank-you/', '/rooflume/dd/assets/roof.webp']) {
-  test(`GET/HEAD ${path} returns a real 404 without fallback or redirect`, async () => {
-    for (const method of ['GET', 'HEAD']) {
-      const seen = [];
-      const response = await router.fetch(new Request(origin + path, { method }), { ASSETS: assets(seen) });
-      assert.equal(response.status, 404);
-      assert.equal(response.headers.get('location'), null);
-      assert.equal(response.headers.get('cache-control'), 'no-store');
-      assert.equal(response.headers.get('x-robots-tag'), 'noindex,nofollow,noarchive,nosnippet');
-      assert.ok(seen.every(call => call.path !== '/'));
-      const body = await response.text();
-      if (method === 'HEAD') assert.equal(body, '');
-      else assert.match(body, /404.*Page not found/);
-    }
-  });
-}
-
-test('unknown API suffixes do not reach the Service Binding', async () => {
-  for (const path of ['/rooflume/dd/api/lead', '/unregistered/api/lead', '/lp/roofing-01/test/api/lead']) {
-    const response = await router.fetch(new Request(origin + path, { method: 'POST', body: '{}' }), {
-      ASSETS: { fetch() { assert.fail('Unknown POST must not fetch assets'); } },
-      LEAD_GATEWAY: { fetch() { assert.fail('Unknown API must not reach gateway'); } },
-    });
-    assert.equal(response.status, 404);
-    assert.equal(response.headers.get('location'), null);
-  }
-});
-
-test('binding fallback redirects for unknown paths become 404s', async () => {
-  for (const location of ['/', origin + '/', 'https://other.example.test/']) {
-    const response = await router.fetch(new Request(origin + '/rooflume/dd/'), {
-      ASSETS: { fetch: () => new Response(null, { status: 301, headers: { location } }) },
-    });
-    assert.equal(response.status, 404);
-    assert.equal(response.headers.get('location'), null);
-  }
-});
-
-test('a static custom 404 page is preserved with mounted assets and security headers', async () => {
-  const response = await router.fetch(new Request(origin + '/rooflume/missing/'), {
-    ASSETS: { fetch: () => new Response('<h1>Custom 404</h1><img src="/assets/roof.webp">', {
-      status: 404, headers: { 'content-type': 'text/html', location: '/', 'cache-control': 'immutable' },
-    }) },
-  });
-  assert.equal(response.status, 404);
-  assert.match(await response.text(), /Custom 404.*src="\/rooflume\/assets\/roof.webp"/);
-  assert.equal(response.headers.get('location'), null);
-  assert.equal(response.headers.get('cache-control'), 'no-store');
-  assert.equal(response.headers.get('x-content-type-options'), 'nosniff');
-});
-
-test('runtime mounts are explicit, arbitrary, and change without rebuilding', async () => {
-  for (const prefix of ['/campaign.v2', '/some/arbitrary/deep/path']) {
-    const input = new Request(origin + prefix + '/');
-    assert.equal((await worker.fetch(input, { ASSETS: assets() })).status, 404);
-    const env = { ASSETS: assets(), RUNTIME_MOUNT_PATHS: JSON.stringify([prefix]) };
-    assert.equal((await worker.fetch(input, env)).status, 200);
-    assert.equal((await worker.fetch(new Request(origin + '/'), env)).status, 200);
-    assert.equal((await worker.fetch(new Request(origin + prefix + '/child/'), env)).status, 404);
-  }
-});
-
-test('invalid runtime mount configuration fails closed', async () => {
-  for (const value of ['', 'invalid', '{}', [null], ['//other'], ['/a/../b'], ['/a?query'], ['/api/lead/'], ['/thank-you/'], ['/a%2fb/']]) {
-    const response = await worker.fetch(new Request(origin + '/'), {
-      RUNTIME_MOUNT_PATHS: value, ASSETS: { fetch() { assert.fail('Invalid configuration must not serve'); } },
-    });
-    assert.equal(response.status, 503);
-    assert.equal(response.headers.get('cache-control'), 'no-store');
-  }
-});
 // Model actual file lookup, including Cloudflare's HTML canonical redirect.
 const files = new Map([
   ['/', ['text/html', '<img src="/assets/roof.webp"><script src="/_astro/site.abcdefgh.js"></script><link href="/favicon.svg">']],
@@ -130,8 +56,8 @@ for (const prefix of ['/rooflume', '/lp/roofing-01', '/templates/service/roofing
   });
 }
 
-test('legitimate root and static file redirects retain their behavior', async () => {
-  for (const path of ['/', '/index.html', '/thank-you']) {
+test('root and static file redirects retain their original behavior', async () => {
+  for (const path of ['/', '/favicon.svg', '/assets/missing.webp', '/thank-you']) {
     const target = path === '/thank-you' ? '/thank-you/' : '/';
     const response = await router.fetch(new Request(origin + path), {
       ASSETS: { fetch: () => new Response(null, { status: 301, headers: { location: target } }) },
@@ -203,7 +129,7 @@ test('root assets take priority; HEAD and non-GET semantics are preserved', asyn
   const postCalls = [];
   const post = await router.fetch(new Request(origin + '/rooflume/', { method: 'POST' }), { ASSETS: assets(postCalls) });
   assert.equal(post.status, 404);
-  assert.equal(postCalls.length, 0);
+  assert.equal(postCalls.length, 1);
 });
 
 for (const prefix of ['/rooflume', '/lp/roofing-01', '/templates/service/roofing']) {

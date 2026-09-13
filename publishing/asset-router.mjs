@@ -100,42 +100,35 @@ async function submitLead(request, env, url) {
   }
 }
 
-// Cloudflare does not expose the matched route prefix. A runtime allowlist is
-// required to distinguish a mount from an unknown child of that mount.
-function runtimeMounts(value) {
-  if (value === undefined) return ['/'];
-  const paths = typeof value === 'string' ? JSON.parse(value) : value;
-  if (!Array.isArray(paths)) throw new TypeError('Invalid runtime mounts');
-  const mounts = paths.map(path => {
-    if (typeof path !== 'string' || !path.startsWith('/') || /[?#\\\s]|\/\/|%2f|%5c/i.test(path) ||
-        new URL(path, 'https://mount.invalid').pathname !== path) {
-      throw new TypeError('Invalid runtime mount');
+function* mountedAssets(pathname) {
+  // Cloudflare does not pass the matched route prefix to the Worker. Recognize
+  // reserved suffixes first, then try static file suffixes at segment boundaries.
+  // Missing files/API paths must never fall through to the landing page.
+  const reserved = /\/(?:_astro|assets|api)(?:\/|$)/.exec(pathname);
+  if (reserved) {
+    if (reserved.index > 0) {
+      yield { prefix: pathname.slice(0, reserved.index), pathname: pathname.slice(reserved.index) };
     }
-    const base = resolveRuntimeMount(path);
-    if (base !== path.replace(/\/?$/, '/')) throw new TypeError('Reserved runtime mount');
-    return base;
-  });
-  return [...new Set(['/', ...mounts])].sort((a, b) => b.length - a.length);
-}
-
-async function notFound(request, response, prefix = '') {
-  // ASSETS supplies a custom static 404 page when one exists. Otherwise use a
-  // small self-contained response; never interpolate the untrusted pathname.
-  const custom = response?.status === 404 && response.headers.get('content-type')?.includes('text/html');
-  const headers = new Headers(custom ? response.headers : undefined);
-  for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
-    if (!headers.has(name)) headers.set(name, value);
+    return;
   }
-  headers.set('Cache-Control', 'no-store');
-  headers.set('Content-Type', 'text/html; charset=utf-8');
-  for (const name of ['location', 'content-length', 'etag']) headers.delete(name);
-  let body;
-  if (custom) body = prefixLocalAssets(await response.text(), prefix);
-  else {
-    await response?.body?.cancel();
-    body = '<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Page not found</title><main><h1>404 ? Page not found</h1><p>The requested page could not be found.</p></main></html>';
+  const thankYou = /\/thank-you\/?$/.exec(pathname);
+  if (thankYou) {
+    if (thankYou.index > 0) {
+      yield { prefix: resolveRuntimeMount(pathname).slice(0, -1), pathname: "/thank-you/" };
+    }
+    return;
   }
-  return new Response(request.method === 'HEAD' ? null : body, { status: 404, headers });
+  for (let slash = pathname.indexOf("/", 1); slash !== -1; slash = pathname.indexOf("/", slash + 1)) {
+    if (slash < pathname.length - 1) {
+      yield { prefix: pathname.slice(0, slash), pathname: pathname.slice(slash) };
+    }
+  }
+  // An otherwise unknown extensionless document path is a runtime mount root.
+  // This supports any mount depth without build-time domain or route settings.
+  const prefix = resolveRuntimeMount(pathname).slice(0, -1);
+  if (prefix && !prefix.split("/").at(-1).includes(".")) {
+    yield { prefix, pathname: "/" };
+  }
 }
 
 function withCacheHeaders(response, pathname) {
@@ -162,6 +155,18 @@ function withCacheHeaders(response, pathname) {
 
 async function fetchAsset(request, env, url) {
   return env.ASSETS.fetch(new Request(new Request(url, request), { redirect: "manual" }));
+}
+
+function isRootAssetRedirect(response, url) {
+  if (![301, 302, 303, 307, 308].includes(response.status)) return false;
+  const location = response.headers.get("location");
+  if (!location) return false;
+  try {
+    const target = new URL(location, url);
+    return target.origin === url.origin && target.pathname === "/";
+  } catch {
+    return false;
+  }
 }
 
 function prefixLocalAssets(text, prefix) {
@@ -214,47 +219,59 @@ async function rewriteResponse(response, prefix) {
 export default {
   async fetch(request, env) {
     const originalUrl = new URL(request.url);
-    let mounts;
-    try { mounts = runtimeMounts(env.RUNTIME_MOUNT_PATHS); }
-    catch {
-      return new Response('Service unavailable', { status: 503, headers: { ...SECURITY_HEADERS, 'Cache-Control': 'no-store' } });
+
+    // Dispatch before ASSETS so every mount uses the same fail-closed handler.
+    if (/\/api\/lead$/.test(originalUrl.pathname)) {
+      return submitLead(request, env, originalUrl);
     }
-    const mountBase = mounts.find(base => originalUrl.pathname === base.slice(0, -1) || originalUrl.pathname.startsWith(base));
-    const prefix = mountBase.slice(0, -1);
-    const pathname = originalUrl.pathname.slice(prefix.length) || '/';
 
-    // Only the exact API route inside a declared mount reaches the gateway.
-    if (pathname === '/api/lead') return submitLead(request, env, originalUrl);
-    if (request.method !== 'GET' && request.method !== 'HEAD') return notFound(request);
-
-    if (prefix && originalUrl.pathname === prefix) {
+    const mountBase = resolveRuntimeMount(originalUrl.pathname);
+    const mountRootWithoutSlash = originalUrl.pathname === mountBase.slice(0, -1) &&
+      !/\/(?:_astro|assets|api)(?:\/|$)|\.[^/]*$/.test(originalUrl.pathname);
+    if ((request.method === "GET" || request.method === "HEAD") && mountRootWithoutSlash) {
+      // Canonicalize before ASSETS can redirect an unknown path to the origin
+      // root. An origin-relative Location preserves the host and exact query.
       return withCacheHeaders(new Response(null, {
         status: 308,
         headers: { ...SECURITY_HEADERS, Location: mountBase + originalUrl.search },
       }), originalUrl.pathname);
     }
 
-    // Strip one known mount only. ASSETS can then resolve actual files, but no
-    // progressively shortened suffix or unknown document can become the LP.
-    const assetUrl = new URL(originalUrl);
-    assetUrl.pathname = prefix && pathname === '/thank-you' ? '/thank-you/' : pathname;
-    let response = await fetchAsset(request, env, assetUrl);
-    if (response.status === 404) return notFound(request, response, prefix);
+    // Normal root deployment first.
+    let response = await fetchAsset(request, env, originalUrl);
 
-    // Never relay a binding fallback redirect to a mount root for an unknown
-    // path. Legitimate file canonical redirects remain within the same mount.
-    if ([301, 302, 303, 307, 308].includes(response.status)) {
-      const location = response.headers.get('location');
-      let target;
-      try { target = location && new URL(location, assetUrl); } catch { /* Invalid redirect. */ }
-      if (!target || target.origin !== originalUrl.origin || (target.pathname === '/' && pathname !== '/' && pathname !== '/index.html')) {
-        return notFound(request, response);
+    // The asset binding may canonicalize an unknown extensionless path to /.
+    // Resolve that mount against the root asset internally instead of letting
+    // its Location header take the browser outside the Worker's route.
+    if ((request.method === "GET" || request.method === "HEAD") && isRootAssetRedirect(response, originalUrl)) {
+      const mount = [...mountedAssets(originalUrl.pathname)].find(asset => asset.pathname === "/");
+      if (mount) {
+        const rootUrl = new URL(originalUrl);
+        rootUrl.pathname = "/";
+        await response.body?.cancel();
+        response = await rewriteResponse(await fetchAsset(request, env, rootUrl), mount.prefix);
+        return withCacheHeaders(response, "/");
       }
-      const headers = new Headers(response.headers);
-      headers.set('Location', prefix + target.pathname + target.search + target.hash);
-      response = new Response(response.body, { status: response.status, headers });
     }
-    response = await rewriteResponse(response, prefix);
-    return withCacheHeaders(response, assetUrl.pathname);
+
+    if (response.status !== 404) {
+      return withCacheHeaders(response, originalUrl.pathname);
+    }
+
+    if (request.method === "GET" || request.method === "HEAD") {
+      for (const mount of mountedAssets(originalUrl.pathname)) {
+        const rewrittenUrl = new URL(originalUrl);
+        rewrittenUrl.pathname = mount.pathname;
+        const candidate = await fetchAsset(request, env, rewrittenUrl);
+        if (candidate.status === 404) {
+          await candidate.body?.cancel();
+          continue;
+        }
+        await response.body?.cancel();
+        response = await rewriteResponse(candidate, mount.prefix);
+        return withCacheHeaders(response, mount.pathname);
+      }
+    }
+    return withCacheHeaders(response, originalUrl.pathname);
   },
 };
