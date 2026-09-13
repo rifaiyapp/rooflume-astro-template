@@ -117,6 +117,60 @@ test('binding fallback cannot turn unknown documents into landing pages or redir
   }
 });
 
+test('404 rendering follows only internal HTML canonicalization and preserves the page assets', async () => {
+  const html = '<html><head><link rel="stylesheet" href="/_astro/site.abcdefgh.css"></head><body><h1>Page not found</h1><img src="/assets/roof.webp"><a href="/" data-runtime-mount-home>Back to Home</a></body></html>';
+  for (const prefix of ['', '/rooflume', '/lp/roofing-01']) {
+    for (const target of ['/404', '/404/', '/404/index.html']) {
+      for (const redirectStatus of [301, 302, 303, 307, 308]) {
+        for (const status of [200, 404]) {
+          for (const method of ['GET', 'HEAD']) {
+            const calls = [];
+            const response = await router.fetch(new Request(origin + prefix + '/ddd/?source=test', { method }), {
+              ASSETS: { fetch(input) {
+                const path = new URL(input.url).pathname;
+                calls.push(path);
+                assert.equal(input.method, 'GET', 'Even HEAD needs the real page headers');
+                assert.equal(input.redirect, 'manual', 'Redirects must remain inside ASSETS');
+                if (path === '/404.html') return new Response(null, { status: redirectStatus, headers: { location: target } });
+                assert.equal(path, target);
+                return new Response(html, { status, headers: {
+                  'content-type': 'text/html',
+                  'content-security-policy': "base-uri 'self'; object-src 'none'; frame-ancestors 'self'",
+                  etag: '"original"', 'content-length': String(html.length),
+                } });
+              } },
+            });
+            assert.deepEqual(calls, ['/404.html', target]);
+            assert.equal(response.status, 404);
+            assert.equal(response.headers.get('location'), null);
+            assert.equal(response.headers.get('etag'), null);
+            assert.equal(response.headers.get('content-length'), null);
+            assert.equal(response.headers.get('cache-control'), 'no-store');
+            assert.equal(response.headers.get('content-security-policy'), "base-uri 'self'; object-src 'none'; frame-ancestors 'self'");
+            const expected = html.replaceAll('="/_astro/', `="${prefix}/_astro/`).replaceAll('="/assets/', `="${prefix}/assets/`).replace('href="/" data-runtime-mount-home', `href="${prefix}/" data-runtime-mount-home`);
+            assert.equal(await response.text(), method === 'HEAD' ? '' : expected);
+          }
+        }
+      }
+    }
+  }
+});
+
+test('404 asset redirect loops and unrelated destinations never escape into public routing or another design', async () => {
+  for (const target of ['/404.html', '/', '/thank-you/', 'https://other.example.test/404', 'http://[invalid']) {
+    let calls = 0;
+    const response = await router.fetch(new Request(origin + '/rooflume/ddd/'), { ASSETS: { fetch(input) {
+      calls++;
+      assert.equal(new URL(input.url).pathname, '/404.html');
+      return new Response('Redirect body must not be rendered', { status: 307, headers: { location: target } });
+    } } });
+    assert.equal(calls, 1);
+    assert.equal(response.status, 404);
+    assert.equal(response.headers.get('location'), null);
+    assert.equal(await response.text(), '', 'The Astro asset is the sole 404 design');
+  }
+});
+
 for (const prefix of ['/rooflume', '/lp/roofing-01', '/templates/service/roofing']) {
   test(`GET/HEAD ${prefix} canonicalizes before asset redirects and retains host/query`, async () => {
     for (const host of [origin, 'https://worker.example.workers.dev']) {

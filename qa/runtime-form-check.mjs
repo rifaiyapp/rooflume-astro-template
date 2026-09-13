@@ -8,6 +8,7 @@ import router from '../publishing/asset-router.mjs';
 // Exercise one live fixture build through the real Worker and a local-only
 // Service Binding mock. Requests outside the mounted route deliberately fail.
 const root = resolve(process.env.QA_DIST || 'tmp/form-live-dist');
+const built404 = await readFile(resolve(root, '404.html'), 'utf8');
 const securityHeaders = Object.fromEntries((await readFile(resolve(root, '_headers'), 'utf8'))
   .split(/\r?\n/).filter(line => /^\s+[^:]+:/.test(line)).map(line => {
     const colon = line.indexOf(':');
@@ -32,7 +33,10 @@ const server = createServer(async (req, res) => {
     const response = await router.fetch(request, {
       RUNTIME_MOUNT_PATHS: JSON.stringify(mount ? [mount + '/'] : []),
       ASSETS: { async fetch(input) {
-        const path = new URL(input.url).pathname;
+        let path = new URL(input.url).pathname;
+        // Model Cloudflare's default HTML handling, not a raw filesystem read.
+        if (path === '/404.html') return Response.redirect(base + '/404', 307);
+        if (path === '/404') path = '/404.html';
         // Reproduce the live no-slash redirect before consulting static files.
         if (mount && path === mount) return Response.redirect(base, 301);
         const file = resolve(root, '.' + (path.endsWith('/') ? path + 'index.html' : path));
@@ -115,7 +119,31 @@ try {
         assert.equal(missing.request().redirectedFrom(), null);
         assert.equal(missing.headers()['cache-control'], 'no-store');
         assert.equal(missing.headers()['x-robots-tag'], 'noindex,nofollow,noarchive,nosnippet');
+        const returnedHtml = await missing.text();
+        assert.equal(mount ? returnedHtml.replaceAll(`="${mount}/`, '="/') : returnedHtml, built404,
+          '404 response must be the complete built Astro page, with only mount-aware URLs changed');
         assert.equal(await page.locator('h1').textContent(), 'Page not found');
+        assert.equal(await page.locator('main').evaluate(main => getComputedStyle(main).backgroundColor), 'rgb(6, 31, 73)',
+          'The existing global design stylesheet must load');
+        const stylesheets = await page.locator('link[rel="stylesheet"]').evaluateAll(links => links.map(link => link.href));
+        assert.ok(stylesheets.length > 0);
+        let fontCount = 0;
+        for (const href of stylesheets) {
+          assert.ok(new URL(href).pathname.startsWith(mount + '/_astro/'));
+          const css = await page.request.get(href);
+          assert.equal(css.status(), 200);
+          assert.match(css.headers()['content-type'], /text\/css/);
+          // Preserve font references and prove the linked font files are served.
+          for (const match of (await css.text()).matchAll(/url\(["']?([^\s"')]+\.woff2)["']?\)/g)) {
+            const fontUrl = new URL(match[1], href);
+            assert.ok(['/assets/', '/_astro/'].some(directory => fontUrl.pathname.startsWith(mount + directory)));
+            const font = await page.request.get(fontUrl.href);
+            assert.equal(font.status(), 200);
+            assert.match(font.headers()['content-type'], /font\/woff2/);
+            fontCount++;
+          }
+        }
+        assert.ok(fontCount > 0, 'The built stylesheet must retain its self-hosted fonts');
         assert.equal(await page.locator('.button[data-runtime-mount-home]').getAttribute('href'), mount + '/');
         assert.equal(await page.locator('img').evaluateAll(images => images.filter(image => !image.complete || !image.naturalWidth).length), 0);
         assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));

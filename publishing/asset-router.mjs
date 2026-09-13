@@ -120,9 +120,29 @@ function runtimeMounts(value) {
 }
 
 async function notFound(request, env, url, prefix) {
-  const pageUrl = new URL(url);
+  let pageUrl = new URL(url);
   pageUrl.pathname = "/404.html";
-  const page = await fetchAsset(new Request(request.url, { method: "GET" }), env, pageUrl);
+  const pageRequest = new Request(request.url, { method: "GET" });
+  let page = await fetchAsset(pageRequest, env, pageUrl);
+  // ASSETS applies HTML canonicalization even to internal fetches, commonly
+  // /404.html -> /404. Follow only this asset's canonical forms through the
+  // binding; never redirect the browser or re-enter the public Worker router.
+  const visited = new Set([pageUrl.pathname]);
+  while ([301, 302, 303, 307, 308].includes(page.status) && visited.size < 4) {
+    let target;
+    try {
+      const location = page.headers.get("location");
+      if (!location) break;
+      target = new URL(location, pageUrl);
+    } catch { break; }
+    if (target.origin !== url.origin || target.username || target.password ||
+        !["/404.html", "/404", "/404/", "/404/index.html"].includes(target.pathname) ||
+        visited.has(target.pathname)) break;
+    visited.add(target.pathname);
+    await page.body?.cancel();
+    pageUrl = target;
+    page = await fetchAsset(pageRequest, env, pageUrl);
+  }
   const custom = [200, 404].includes(page.status) && page.headers.get("content-type")?.includes("text/html");
   const headers = new Headers(custom ? page.headers : SECURITY_HEADERS);
   for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
@@ -131,13 +151,12 @@ async function notFound(request, env, url, prefix) {
   headers.set("Content-Type", "text/html; charset=utf-8");
   headers.set("Cache-Control", "no-store");
   for (const name of ["location", "content-length", "etag"]) headers.delete(name);
-  let body;
+  let body = null;
   if (custom) {
     body = prefixLocalAssets(await page.text(), prefix)
       .replace(/href="[^"]*"(?= data-runtime-mount-home(?:[ =>]))/g, `href="${prefix}/"`);
   } else {
     await page.body?.cancel();
-    body = `<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow,noarchive,nosnippet"><title>Page not found</title><main><h1>Page not found</h1><p>The page you requested could not be found.</p><a href="${prefix}/">Back to Home</a></main></html>`;
   }
   return new Response(request.method === "HEAD" ? null : body, { status: 404, headers });
 }
