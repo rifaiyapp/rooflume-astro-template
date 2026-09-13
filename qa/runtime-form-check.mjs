@@ -25,6 +25,7 @@ const server = createServer(async (req, res) => {
     const body = Buffer.concat(chunks);
     const request = new Request(url, { method: req.method, headers: req.headers, ...(body.length ? { body } : {}) });
     const response = await router.fetch(request, {
+      RUNTIME_MOUNT_PATHS: mount ? [mount + '/'] : [],
       ASSETS: { async fetch(input) {
         const path = new URL(input.url).pathname;
         // Reproduce the live no-slash redirect before consulting static files.
@@ -68,6 +69,11 @@ try {
       const response = await page.goto(requestedUrl, { waitUntil: 'networkidle' });
       assert.equal(response.status(), 200);
       assert.equal(page.url(), pageUrl);
+      for (const suffix of ['/dd/', '/random/path/', '/dd']) {
+        const missing = await page.request.get(base + mount + suffix, { maxRedirects: 0 });
+        assert.equal(missing.status(), 404);
+        assert.equal(missing.headers().location, undefined);
+      }
       const redirect = response.request().redirectedFrom();
       if (mount && !slash) {
         assert.ok(redirect, 'No-slash mount must redirect to its slash variant');

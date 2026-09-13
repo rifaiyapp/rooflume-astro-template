@@ -3,7 +3,10 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { runInNewContext } from 'node:vm';
 import ts from 'typescript';
-import router from '../publishing/asset-router.mjs';
+import worker from '../publishing/asset-router.mjs';
+const router = { fetch: (request, env) => worker.fetch(request, {
+  RUNTIME_MOUNT_PATHS: ['/rooflume/', '/lp/roofing-01/', '/templates/service/roofing/'], ...env,
+}) };
 import { resolveRuntimeMount } from '../src/utils/runtime-mount.mjs';
 
 function loadLeadConfig(base, mode = 'live') {
