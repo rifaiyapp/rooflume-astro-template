@@ -8,6 +8,11 @@ import router from '../publishing/asset-router.mjs';
 // Exercise one live fixture build through the real Worker and a local-only
 // Service Binding mock. Requests outside the mounted route deliberately fail.
 const root = resolve(process.env.QA_DIST || 'tmp/form-live-dist');
+const securityHeaders = Object.fromEntries((await readFile(resolve(root, '_headers'), 'utf8'))
+  .split(/\r?\n/).filter(line => /^\s+[^:]+:/.test(line)).map(line => {
+    const colon = line.indexOf(':');
+    return [line.slice(0, colon).trim(), line.slice(colon + 1).trim()];
+  }));
 const mime = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png', '.webp': 'image/webp', '.avif': 'image/avif', '.woff2': 'font/woff2' };
 let mount = '';
 let calls = [];
@@ -25,6 +30,7 @@ const server = createServer(async (req, res) => {
     const body = Buffer.concat(chunks);
     const request = new Request(url, { method: req.method, headers: req.headers, ...(body.length ? { body } : {}) });
     const response = await router.fetch(request, {
+      RUNTIME_MOUNT_PATHS: JSON.stringify(mount ? [mount + '/'] : []),
       ASSETS: { async fetch(input) {
         const path = new URL(input.url).pathname;
         // Reproduce the live no-slash redirect before consulting static files.
@@ -32,7 +38,7 @@ const server = createServer(async (req, res) => {
         const file = resolve(root, '.' + (path.endsWith('/') ? path + 'index.html' : path));
         if (!file.startsWith(root + sep)) return new Response(null, { status: 403 });
         try {
-          return new Response(await readFile(file), { headers: { 'content-type': mime[extname(file)] || 'application/octet-stream' } });
+          return new Response(await readFile(file), { headers: { ...securityHeaders, 'content-type': mime[extname(file)] || 'application/octet-stream' } });
         } catch { return new Response(null, { status: 404 }); }
       } },
       LEAD_GATEWAY: { async fetch(internal) {
@@ -103,8 +109,24 @@ try {
       assert.equal(await page.locator('h1').count(), 1);
       assert.equal((await page.request.get(page.url())).status(), 200);
       assert.deepEqual(outside, [], 'Thank-you navigation must stay inside the Worker mount');
+      for (const child of ['ddd', 'ddd/', 'random/path/', 'test/', 'test/index.html']) {
+        const missing = await page.goto(base + mount + '/' + child, { waitUntil: 'networkidle' });
+        assert.equal(missing.status(), 404);
+        assert.equal(missing.request().redirectedFrom(), null);
+        assert.equal(missing.headers()['cache-control'], 'no-store');
+        assert.equal(missing.headers()['x-robots-tag'], 'noindex,nofollow,noarchive,nosnippet');
+        assert.equal(await page.locator('h1').textContent(), 'Page not found');
+        assert.equal(await page.locator('.button[data-runtime-mount-home]').getAttribute('href'), mount + '/');
+        assert.equal(await page.locator('img').evaluateAll(images => images.filter(image => !image.complete || !image.naturalWidth).length), 0);
+        assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+      }
+      if (mount === '/rooflume') await page.screenshot({ path: `qa/runtime-output/not-found-${mobile ? 'mobile' : 'desktop'}.png`, animations: 'disabled' });
+      await page.locator('.button[data-runtime-mount-home]').click();
+      await page.waitForURL(base + mount + '/');
+      assert.equal(calls.length, 1, '404 navigation must never submit another lead');
+      assert.deepEqual(outside, [], '404 assets and home navigation must stay in the mount');
       await context.close();
-      console.log(`PASS compiled LP, canonicalization, protected submission and thank-you at ${mount + slash}`);
+      console.log(`PASS compiled LP, canonicalization, protected submission, thank-you and branded 404 at ${mount + slash}`);
     }
   }
 } finally {

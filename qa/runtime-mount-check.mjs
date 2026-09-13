@@ -1,12 +1,16 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import router from '../publishing/asset-router.mjs';
+import worker from '../publishing/asset-router.mjs';
+const router = { fetch(request, env) {
+  return worker.fetch(request, { RUNTIME_MOUNT_PATHS: '["/rooflume/","/roofing/","/rooflume/hd/","/lp/roofing-01/","/templates/service/roofing/"]', ...env });
+} };
 
 const origin = 'https://roofing.example.test';
 // Model actual file lookup, including Cloudflare's HTML canonical redirect.
 const files = new Map([
   ['/', ['text/html', '<img src="/assets/roof.webp"><script src="/_astro/site.abcdefgh.js"></script><link href="/favicon.svg">']],
   ['/thank-you/', ['text/html', '<h1>Thank you</h1><img src="/assets/roof.webp">']],
+  ['/404.html', ['text/html', '<h1>Page not found</h1><a href="/" data-runtime-mount-home>Back to Home</a><img src="/assets/roof.webp">']],
   ['/assets/roof.webp', ['image/webp', 'image']],
   ['/_astro/site.abcdefgh.js', ['text/javascript', 'export const ready = true;']],
   ['/_astro/site.abcdefgh.css', ['text/css', 'body{background:url(/assets/roof.webp)}']],
@@ -32,6 +36,86 @@ function assets(seen = []) {
     });
   } };
 }
+
+test('unknown children return real 404s without redirects or landing-page fallback', async () => {
+  for (const prefix of ['', '/rooflume', '/lp/roofing-01', '/templates/service/roofing']) {
+    for (const child of ['/ddd', '/ddd/', '/random/path/', '/test/', '/foo/', '/test/thank-you/', '/test/index.html']) {
+      for (const method of ['GET', 'HEAD']) {
+        const response = await router.fetch(new Request(origin + prefix + child, { method }), { ASSETS: assets() });
+        assert.equal(response.status, 404, prefix + child);
+        assert.equal(response.headers.get('location'), null);
+        assert.equal(response.headers.get('cache-control'), 'no-store');
+        const body = await response.text();
+        if (method === 'HEAD') assert.equal(body, '');
+        else if (!child.endsWith('.html')) {
+          assert.match(body, /Page not found/);
+          assert.ok(body.includes(`href="${prefix}/"`));
+          assert.ok(body.includes(`src="${prefix}/assets/roof.webp"`));
+        }
+      }
+    }
+  }
+});
+
+test('runtime JSON and text values enable mounts immediately; no rebuild or cached discovery', async () => {
+  const env = { ASSETS: assets() };
+  for (const value of [undefined, '["/rooflume/"]', [], ['/lp/roofing-01'], '["/rooflume/","/rooflume/hd/"]', '["/"]']) {
+    env.RUNTIME_MOUNT_PATHS = value;
+    const approved = value === undefined ? [] : typeof value === 'string' ? JSON.parse(value) : value;
+    for (const prefix of ['', '/rooflume', '/lp/roofing-01', '/unconfigured']) {
+      const enabled = !prefix || approved.some(path => path.replace(/\/$/, '') === prefix);
+      for (const suffix of ['/', '/thank-you/']) {
+        const response = await worker.fetch(new Request(origin + prefix + suffix), env);
+        assert.equal(response.status, enabled ? 200 : 404, prefix + suffix);
+      }
+    }
+  }
+});
+
+test('invalid runtime values reject the entire nested list while root remains available', async () => {
+  for (const value of ['', 'not-json', 'null', '"/rooflume/"', {}, null, 1,
+    ...['/rooflume//', '//outside.test/', 'https://outside.test/', '/a/../rooflume/', '/a/%2e%2e/',
+      '/rooflume/?q=x', '/rooflume/#x', '/rooflume\\child/', '/rooflume/%2Fchild/', '/api/', '/assets/nested/',
+      '/_astro/', '/thank-you/', '/index.html/', '/space here/', 42].map(path => JSON.stringify(['/rooflume/', path]))]) {
+    const env = { RUNTIME_MOUNT_PATHS: value, ASSETS: assets(), LEAD_GATEWAY: { fetch: () => Response.json({ success: true }) } };
+    for (const path of ['/', '/thank-you/']) assert.equal((await worker.fetch(new Request(origin + path), env)).status, 200);
+    for (const path of ['/rooflume', '/rooflume/', '/rooflume/thank-you/']) {
+      assert.equal((await worker.fetch(new Request(origin + path), env)).status, 404);
+    }
+    for (const prefix of ['', '/rooflume']) {
+      const response = await worker.fetch(new Request(origin + prefix + '/api/lead', {
+        method: 'POST', body: '{}', headers: { origin, 'content-type': 'application/json' },
+      }), env);
+      assert.equal(response.status, prefix ? 404 : 200);
+    }
+  }
+});
+
+test('longest mount and segment boundaries prevent child/sibling aliases and gateway access', async () => {
+  for (const path of ['/rooflumee/', '/rooflume/hd/ddd/', '/rooflume/test/api/lead', '/unconfigured/api/lead']) {
+    const api = path.endsWith('/api/lead');
+    const response = await router.fetch(new Request(origin + path, api ? {
+      method: 'POST', body: '{}', headers: { origin, 'content-type': 'application/json' },
+    } : {}), { ASSETS: assets(), LEAD_GATEWAY: { fetch() { assert.fail('Unknown mount reached gateway'); } } });
+    assert.equal(response.status, 404);
+    if (!api) assert.ok((await response.text()).includes(`href="${path.startsWith('/rooflume/hd/') ? '/rooflume/hd/' : '/'}"`));
+  }
+});
+
+test('binding fallback cannot turn unknown documents into landing pages or redirects', async () => {
+  for (const status of [200, 301, 308, 404]) {
+    for (const path of ['/rooflume/ddd', '/rooflume/ddd/', '/unknown/']) {
+      const response = await router.fetch(new Request(origin + path), { ASSETS: { fetch(input) {
+        assert.equal(new URL(input.url).pathname, '/404.html', 'Unknown document must not reach the landing lookup');
+        return new Response(status === 200 ? '<h1>Page not found</h1>' : null, {
+          status, headers: { 'content-type': 'text/html', location: '/' },
+        });
+      } } });
+      assert.equal(response.status, 404);
+      assert.equal(response.headers.get('location'), null);
+    }
+  }
+});
 
 for (const prefix of ['/rooflume', '/lp/roofing-01', '/templates/service/roofing']) {
   test(`GET/HEAD ${prefix} canonicalizes before asset redirects and retains host/query`, async () => {

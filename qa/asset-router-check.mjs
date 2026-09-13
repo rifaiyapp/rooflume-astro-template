@@ -3,7 +3,10 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { runInNewContext } from 'node:vm';
 import ts from 'typescript';
-import router from '../publishing/asset-router.mjs';
+import worker from '../publishing/asset-router.mjs';
+const router = { fetch(request, env) {
+  return worker.fetch(request, { RUNTIME_MOUNT_PATHS: '["/rooflume/","/lp/roofing-01/","/templates/service/roofing/"]', ...env });
+} };
 import { resolveRuntimeMount } from '../src/utils/runtime-mount.mjs';
 
 function loadLeadConfig(base, mode = 'live') {
@@ -234,4 +237,6 @@ test('the same frontend configuration resolves endpoints from runtime paths rega
   assert.equal(publishing.services.filter(service => service.binding === 'LEAD_GATEWAY').length, 1);
   assert.equal(publishing.assets.binding, 'ASSETS');
   assert.equal(publishing.assets.run_worker_first, true);
+  assert.equal(publishing.keep_vars, true);
+  assert.equal(publishing.vars?.RUNTIME_MOUNT_PATHS, undefined, 'Dashboard mounts must not be overwritten at deployment');
 });

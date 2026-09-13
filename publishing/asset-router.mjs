@@ -100,7 +100,49 @@ async function submitLead(request, env, url) {
   }
 }
 
-function* mountedAssets(pathname) {
+// Read on every request: dashboard text (JSON) and JSON bindings both work
+// without rebuilding Astro. Invalid configuration approves no nested mounts;
+// the root deployment remains available and no partial list is accepted.
+function runtimeMounts(value) {
+  try {
+    const paths = value === undefined ? [] : typeof value === "string" ? JSON.parse(value) : value;
+    if (!Array.isArray(paths)) throw new TypeError();
+    const mounts = paths.map(path => {
+      if (typeof path !== "string" || !/^\/(?:[A-Za-z0-9._~-]+\/)*[A-Za-z0-9._~-]*$/.test(path) ||
+          new URL(path, "https://mount.invalid").pathname !== path ||
+          /\/(?:assets|_astro|api|thank-you|index\.html)(?:\/|$)/.test(path)) throw new TypeError();
+      return path.replace(/\/?$/, "/");
+    });
+    return [...new Set(["/", ...mounts])].sort((a, b) => b.length - a.length);
+  } catch {
+    return ["/"];
+  }
+}
+
+async function notFound(request, env, url, prefix) {
+  const pageUrl = new URL(url);
+  pageUrl.pathname = "/404.html";
+  const page = await fetchAsset(new Request(request.url, { method: "GET" }), env, pageUrl);
+  const custom = [200, 404].includes(page.status) && page.headers.get("content-type")?.includes("text/html");
+  const headers = new Headers(custom ? page.headers : SECURITY_HEADERS);
+  for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
+    if (!headers.has(name)) headers.set(name, value);
+  }
+  headers.set("Content-Type", "text/html; charset=utf-8");
+  headers.set("Cache-Control", "no-store");
+  for (const name of ["location", "content-length", "etag"]) headers.delete(name);
+  let body;
+  if (custom) {
+    body = prefixLocalAssets(await page.text(), prefix)
+      .replace(/href="[^"]*"(?= data-runtime-mount-home(?:[ =>]))/g, `href="${prefix}/"`);
+  } else {
+    await page.body?.cancel();
+    body = `<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow,noarchive,nosnippet"><title>Page not found</title><main><h1>Page not found</h1><p>The page you requested could not be found.</p><a href="${prefix}/">Back to Home</a></main></html>`;
+  }
+  return new Response(request.method === "HEAD" ? null : body, { status: 404, headers });
+}
+
+function* mountedAssets(pathname, approvedPrefix) {
   // Cloudflare does not pass the matched route prefix to the Worker. Recognize
   // reserved suffixes first, then try static file suffixes at segment boundaries.
   // Missing files/API paths must never fall through to the landing page.
@@ -123,10 +165,9 @@ function* mountedAssets(pathname) {
       yield { prefix: pathname.slice(0, slash), pathname: pathname.slice(slash) };
     }
   }
-  // An otherwise unknown extensionless document path is a runtime mount root.
-  // This supports any mount depth without build-time domain or route settings.
+  // Only a configured mount root may fall back to the landing page.
   const prefix = resolveRuntimeMount(pathname).slice(0, -1);
-  if (prefix && !prefix.split("/").at(-1).includes(".")) {
+  if (prefix && prefix === approvedPrefix) {
     yield { prefix, pathname: "/" };
   }
 }
@@ -219,15 +260,27 @@ async function rewriteResponse(response, prefix) {
 export default {
   async fetch(request, env) {
     const originalUrl = new URL(request.url);
+    const mounts = runtimeMounts(env.RUNTIME_MOUNT_PATHS);
+    const approvedBase = mounts.find(base => originalUrl.pathname === base.slice(0, -1) || originalUrl.pathname.startsWith(base));
+    const approvedPrefix = approvedBase.slice(0, -1);
+    const relativePath = originalUrl.pathname.slice(approvedPrefix.length) || "/";
 
     // Dispatch before ASSETS so every mount uses the same fail-closed handler.
     if (/\/api\/lead$/.test(originalUrl.pathname)) {
+      if (relativePath !== "/api/lead") return leadResponse(404);
       return submitLead(request, env, originalUrl);
     }
 
+    // Reject unknown documents before ASSETS can redirect or serve an HTML
+    // fallback. File and reserved asset paths retain the existing lookup flow.
+    const documentRoute = ["/", "/index.html", "/thank-you", "/thank-you/"].includes(relativePath);
+    const assetRoute = /^\/(?:assets|_astro)(?:\/|$)/.test(relativePath) || /\/[^/]+\.[^/]+$/.test(relativePath);
+    if (!documentRoute && (!assetRoute || /\.html?\/?$/i.test(relativePath) || /^\/api(?:\/|$)/.test(relativePath))) {
+      return notFound(request, env, originalUrl, approvedPrefix);
+    }
+
     const mountBase = resolveRuntimeMount(originalUrl.pathname);
-    const mountRootWithoutSlash = originalUrl.pathname === mountBase.slice(0, -1) &&
-      !/\/(?:_astro|assets|api)(?:\/|$)|\.[^/]*$/.test(originalUrl.pathname);
+    const mountRootWithoutSlash = approvedPrefix && originalUrl.pathname === approvedPrefix;
     if ((request.method === "GET" || request.method === "HEAD") && mountRootWithoutSlash) {
       // Canonicalize before ASSETS can redirect an unknown path to the origin
       // root. An origin-relative Location preserves the host and exact query.
@@ -244,7 +297,7 @@ export default {
     // Resolve that mount against the root asset internally instead of letting
     // its Location header take the browser outside the Worker's route.
     if ((request.method === "GET" || request.method === "HEAD") && isRootAssetRedirect(response, originalUrl)) {
-      const mount = [...mountedAssets(originalUrl.pathname)].find(asset => asset.pathname === "/");
+      const mount = [...mountedAssets(originalUrl.pathname, approvedPrefix)].find(asset => asset.prefix === approvedPrefix && asset.pathname === "/");
       if (mount) {
         const rootUrl = new URL(originalUrl);
         rootUrl.pathname = "/";
@@ -259,7 +312,8 @@ export default {
     }
 
     if (request.method === "GET" || request.method === "HEAD") {
-      for (const mount of mountedAssets(originalUrl.pathname)) {
+      for (const mount of mountedAssets(originalUrl.pathname, approvedPrefix)) {
+        if (mount.prefix !== approvedPrefix) continue;
         const rewrittenUrl = new URL(originalUrl);
         rewrittenUrl.pathname = mount.pathname;
         const candidate = await fetchAsset(request, env, rewrittenUrl);
