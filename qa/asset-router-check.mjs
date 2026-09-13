@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
+import { runInNewContext } from 'node:vm';
 import ts from 'typescript';
 import router from '../publishing/asset-router.mjs';
 
@@ -118,7 +119,7 @@ test('gateway rejection, redirect, malformed response and exceptions never leak'
   ]) await rejected(request(), status, { fetch: makeResponse });
 });
 test('normal static routing, fallback, rewriting and security headers are preserved', async () => {
-  for (const path of ['/', '/thank-you/', '/assets/roof.webp', '/_astro/site.abcdefgh.js', '/lp/roofing-01/', '/lp/roofing-01/assets/roof.webp', '/missing']) {
+  for (const path of ['/', '/thank-you/', '/assets/roof.webp', '/_astro/site.abcdefgh.js', '/lp/roofing-01/', '/lp/roofing-01/thank-you/', '/lp/roofing-01/assets/roof.webp', '/missing']) {
     const seen = [];
     const input = new Request(origin + path);
     const response = await router.fetch(input, { LEAD_GATEWAY: noGateway, ASSETS: { fetch(assetRequest) {
@@ -132,12 +133,85 @@ test('normal static routing, fallback, rewriting and security headers are preser
     assert.equal(seen[0], path);
     if (path.startsWith('/lp/')) {
       assert.equal(seen.length, 2);
-      assert.equal(seen[1], path.replace('/lp/roofing-01', ''));
+      assert.equal(seen[1], path.replace('/lp/roofing-01', '').replace(/(?<=.)\/$/, ''));
       assert.match(await response.text(), /src="\/lp\/roofing-01\/assets\/roof.webp"/);
     } else assert.equal(seen.length, 1);
     assert.equal(response.headers.get('x-content-type-options'), 'nosniff');
     assert.match(response.headers.get('content-security-policy'), /frame-ancestors 'self'/);
     assert.equal(response.headers.get('cache-control'), path === '/missing' ? 'no-store' : path.startsWith('/_astro/') ? 'public, max-age=31536000, immutable' : 'public, max-age=0, must-revalidate');
+  }
+});
+
+test('the same form build selects the thank-you route from the runtime pathname and configured deployment base', async () => {
+  const source = readFileSync(new URL('../src/scripts/lead-form.ts', import.meta.url), 'utf8');
+  const compiled = ts.transpile(source, { module: ts.ModuleKind.CommonJS });
+  for (const configuredBase of ['/', '/lp/roofing-01/', '/campaign/', '/campaign']) {
+    const base = configuredBase.replace(/\/?$/, '/');
+    const exports = {};
+    const window = { location: {}, setTimeout: callback => timers.push(callback), clearTimeout() {} };
+    let timers;
+    let requests;
+    let success;
+    runInNewContext(compiled, {
+      exports, window, performance, URLSearchParams, AbortController, Set,
+      document: { referrer: '' },
+      FormData: class extends Map { getAll(key) { return [this.get(key)]; } },
+      CustomEvent: class {},
+      require(id) {
+        if (id === '../../project.config.json') return { deployment: { basePath: configuredBase } };
+        if (id === '../config/site') return { site: { name: 'Test' } };
+        if (id === '../config/lead') return {
+          leadConfig: { endpoint: '/api/lead', timeoutMs: 15000 }, hasLiveLeadService: () => true,
+        };
+        assert.fail(`Unexpected import: ${id}`);
+      },
+      async fetch(endpoint, options) {
+        requests++;
+        assert.equal(endpoint, '/api/lead');
+        assert.equal(options.mode, 'same-origin');
+        assert.equal(options.redirect, 'error');
+        assert.equal(options.credentials, 'omit');
+        return { ok: true, json: async () => ({ success }) };
+      },
+    });
+    // Reuse the compiled module with both origins and different runtime paths.
+    for (const [url, expected] of [
+      ['https://worker.example.workers.dev/', '/thank-you/'],
+      [`https://templates.example.test${base}`, `${base}thank-you/`],
+      [`https://templates.example.test${base}details/?source=test#form`, `${base}thank-you/`],
+      ...(base === '/' ? [] : [
+        [`https://templates.example.test${base.slice(0, -1)}`, `${base}thank-you/`],
+        [`https://templates.example.test${base.slice(0, -1)}-other/`, '/thank-you/'],
+        [`https://templates.example.test/other${base}`, '/thank-you/'],
+        [`https://templates.example.test/?next=${base}`, '/thank-you/'],
+      ]),
+    ]) {
+      for (success of [true, false]) {
+        const location = new URL(url);
+        window.location = {
+          pathname: location.pathname, search: location.search,
+          get href() { return location.href; },
+          set href(value) { location.href = new URL(value, location).href; },
+        };
+        timers = [];
+        requests = 0;
+        const button = { textContent: 'Submit' };
+        const status = {};
+        let submit;
+        const form = Object.assign(new Map([['name', 'Test']]), {
+          dataset: {}, querySelector: selector => selector === '.form-status' ? status : button,
+          querySelectorAll: () => [], checkValidity: () => true,
+          addEventListener(type, handler) { if (type === 'submit') submit = handler; },
+          setAttribute() {}, removeAttribute() {}, reset() {}, dispatchEvent() {},
+        });
+        exports.connectLeadForm(form);
+        await submit({ preventDefault() {} });
+        assert.equal(requests, 1);
+        assert.equal(timers.length, success ? 2 : 1, 'Only confirmed success schedules navigation');
+        if (success) timers[1]();
+        assert.equal(window.location.href, success ? new URL(expected, url).href : url);
+      }
+    }
   }
 });
 test('frontend configuration uses the same origin under root and nested bases without an endpoint variable', () => {

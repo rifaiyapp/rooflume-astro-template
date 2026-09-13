@@ -1,5 +1,8 @@
 import { leadConfig, hasLiveLeadService } from '../config/lead';
 import { site } from '../config/site';
+import project from '../../project.config.json';
+
+const deploymentBasePath = (project.deployment?.basePath || '/').replace(/\/?$/, '/');
 
 export function connectLeadForm(form: HTMLFormElement) {
   if (form.dataset.leadConnected) return;
@@ -105,7 +108,11 @@ export function connectLeadForm(form: HTMLFormElement) {
       form.dispatchEvent(new CustomEvent('rooflume:lead-submitted', { detail: fields, bubbles: true }));
 
       window.setTimeout(() => {
-        window.location.href = `${import.meta.env.BASE_URL}thank-you/`;
+        const pathname = window.location.pathname;
+        const basePath = pathname === deploymentBasePath.slice(0, -1) || pathname.startsWith(deploymentBasePath)
+          ? deploymentBasePath
+          : '/';
+        window.location.href = `${basePath}thank-you/`;
       }, 800);
     } catch {
       status.textContent = "We couldn't send your request. Please try again.";
