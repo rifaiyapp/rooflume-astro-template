@@ -43,7 +43,7 @@ This is an approved, completed commercial template. Project Upgrade is foundatio
 4. Commit only intended validated changes, then fetch latest main again. Preserve newer remote work. Rebase only task commits if needed, resolve only unambiguous conflicts, and rerun relevant validation/audit after reconciliation.
 5. When write authentication and repository policy permit, safely push `git push origin HEAD:main`. Routine work does not stop at a local commit or prepared pull request. A pull request is used only if explicitly requested or required by policy. Never force-push, overwrite newer work or publish failed validation.
 6. Prefer actual local origin, then the approved origin persisted by this environment. Only if no origin is available use `CODEX_GITHUB_REPOSITORY=owner/repository`. Never infer an owner or use a seller/agency fallback. A clone still pointing to its source must be rebound to the buyer repository before write-enabled setup. Never change the master remote as part of copy setup.
-7. Publishing Service uses the existing static configuration and `dist`. Perform bounded live verification at the intended domain when available, including route status, noindex and security headers. Report a real blocker honestly; deployment propagation uses the exact response contract below.
+7. Publishing Service uses the existing static configuration and `dist`. Perform bounded live verification at the intended domain when available, including route status, noindex and security headers. Report results using the Client Mode contract below.
 
 ## Customer-portable template runtime
 
@@ -77,34 +77,33 @@ For meaningful page/section design or redesign tasks:
 
 ## Keydiv strict final-response contract
 
-This block is authoritative for team-facing completion messages. Successful technical work still runs fully; only the final user-facing report is constrained.
+Client Mode is the default for ordinary website edits: content/text, images, colors, FAQs, phone/email, sections, and basic layout/design. It also applies to Foundation Setup, Runtime Install, Runtime Repair, Destination Publishing, and Validation and Launch.
 
-### Routine success after push/publish
+Run all required internal validation, audit, visual QA, Git synchronization, publishing, and live checks exactly as required. This rule changes user-facing output only, not validation requirements or deployment logic.
 
-Return **only**:
+### Client Mode result
 
-```text
-✅ Completed and published.
-
-[One short sentence describing the requested visible change.]
-```
-
-Do not add any heading, bullet list, Testing section, validation list, command output, file summary, Git detail, commit SHA, viewport list, implementation summary, or "what I changed" section.
-
-### Push succeeded but live deployment is still propagating
-
-Return **only**:
+When the requested task is complete and all required validation passes, return only:
 
 ```text
-✅ Completed and published to GitHub.
-
-Live deployment is still propagating.
+✅ Task completed and validated successfully.
 ```
 
-A normal asynchronous Publishing Service delay is not a build failure. Do not print the successful checks that preceded it.
+For a real validation issue after completing the requested change, return only:
 
-### Genuine blocker
+```text
+⚠️ Task completed, but validation found an issue:
+[short plain-language explanation]
+```
 
-Report only the blocker and the minimum actionable detail needed to resolve it. Do not append successful checklists.
+Do not expose routine command names/results (`npm run validate`, `npm audit`, `npm run audit:distribution`, `npm run qa:cloud`, `npm run qa:form`, `npm run qa:runtime`, `git diff --check`), individual QA suites, internal runtime checks, package-manager or Playwright browser-download details. Do not add checklists, logs, headings, Git details, commit hashes, file summaries, or implementation summaries to client results.
 
-Technical/testing detail may be shown only when the user explicitly asks for technical/testing details. A detailed implementation prompt is **not** such a request.
+Playwright/CDN/browser-install limitations alone are environment limitations, not evidence of a site/runtime failure. When all required non-browser validation passes and no actual site/runtime failure is found, do not present those limitations as a client-facing warning. Keep an accurate internal record of unavailable browser checks; never claim unrun browser/visual QA passed. Do not skip available required checks or dismiss actual failures.
+
+Normal deployment propagation is not a validation error. Preserve bounded live verification and do not claim live deployment is complete without evidence.
+
+### Developer Mode and blockers
+
+Detailed validation results may be shown when the user explicitly requests technical details, the task is debugging/developer work, or a failure requires technical diagnosis. A detailed content/design prompt alone does not select Developer Mode. Include only relevant details; raw logs only when needed for diagnosis, with secrets/private configuration redacted.
+
+If the requested work itself is incomplete or blocked (for example by authentication or a Git conflict), report only the blocker and minimum actionable detail; do not claim completion. Never hide real validation failures or publish failed validation.

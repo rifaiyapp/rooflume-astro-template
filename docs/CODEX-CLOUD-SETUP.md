@@ -14,3 +14,9 @@ Setup installs npm 11 and lockfile dependencies and persists the approved origin
 The canonical scripts persist the scoped credential for later agent work. Treat write-enabled cached environments as privileged; restrict access and revoke/rotate credentials when access ends. Never run bootstrap locally merely for QA. Branch protection remains authoritative; no force-push or policy bypass is allowed.
 
 Once connected, prompt ordinary edits. Codex reads this repository and safely publishes validated changes to your origin when allowed. Environment scripts, secrets and caching are covered in [official OpenAI documentation](https://learn.chatgpt.com/docs/environments/cloud-environment). The token name and direct-publish scripts here are this template's workflow.
+
+## Client-facing task results
+
+For ordinary content/design edits, follow the Client Mode result rule in [AGENTS.md](../AGENTS.md#keydiv-strict-final-response-contract): return only "✅ Task completed and validated successfully." when complete and validated, or "⚠️ Task completed, but validation found an issue:" followed by a short plain-language explanation for a real validation issue.
+
+All required internal checks still run. Keep routine QA/package-manager details internal. Browser-install/CDN limitations alone do not warrant a client warning when all required non-browser validation passes and no actual site/runtime failure is found; record unavailable checks accurately without claiming browser QA passed. Developer Mode allows relevant details for explicit technical requests, debugging/developer work, or necessary failure diagnosis. Reporting does not change runtime or publishing behavior.

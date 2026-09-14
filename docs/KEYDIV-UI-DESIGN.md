@@ -125,8 +125,9 @@ Prompt-only: compare to `DESIGN.md` and verify the design is specific, coherent,
 
 Perform up to three focused refinement passes.
 
-If browser tooling is unavailable, report exactly:
+If browser tooling is unavailable, record internally:
 `VISUAL QA NOT COMPLETED — browser/screenshot tooling unavailable.`
+Use the AGENTS.md Client Mode/Developer Mode contract for user-facing results.
 Do not claim visual parity/final visual approval without rendering.
 
 ## 12. Engineering handoff
