@@ -1,6 +1,8 @@
-# Keydiv UI Design Runtime v2
+# Keydiv UI Design Runtime v2.1
 
 Use this runtime for every meaningful UI/page design or redesign task in this repository. It must work with or without supplied visual references.
+
+For a focused visual change, use Small Visual Edit behavior in section 13 instead of establishing a new art direction. The client-safe editing boundary in `AGENTS.md` remains authoritative. This instruction update does not change the approved Rooflume design or Keydiv Runtime v1.0.0.
 
 ## 1. Classify the input before coding
 
@@ -102,7 +104,7 @@ Mobile is a recomposition, not merely stacked desktop columns. Preserve hierarch
 
 ## 10. Persistent design source
 
-Read and maintain `DESIGN.md`. Keep only durable design decisions:
+Read `DESIGN.md` and update it only when a durable design-system decision genuinely changes. Keep only durable design decisions:
 - input mode/fidelity;
 - style family;
 - design thesis/signature visual idea;
@@ -112,6 +114,8 @@ Read and maintain `DESIGN.md`. Keep only durable design decisions:
 - responsive behavior.
 
 Do not use `DESIGN.md` as a task log.
+
+Reading `DESIGN.md`, `AGENTS.md` or design docs does not authorize modifying them. Ordinary client edits must not update `AGENTS.md` or `docs/**`; a durable design decision permits an update to `DESIGN.md` only.
 
 ## 11. Visual QA
 
@@ -133,3 +137,22 @@ Do not claim visual parity/final visual approval without rendering.
 ## 12. Engineering handoff
 
 Keep semantic HTML/CSS and minimal client JavaScript. Do not weaken repository accessibility, performance, security, indexing/profile, validation, Git, or Publishing Service rules. After design work, follow the repository/factory validation and safe finalization workflow.
+
+## 13. Small client visual edits
+
+For focused content-facing HTML/Astro, CSS, layout, responsive, color, typography, spacing or presentation-animation changes:
+- read the existing project/UI instructions, `DESIGN.md` and the affected implementation;
+- preserve the current art direction and design system;
+- make the smallest correct implementation diff;
+- do not rewrite `DESIGN.md` for a tiny edit; update it only when a durable design-system decision genuinely changes;
+- do not update `AGENTS.md` or `docs/**` during normal client edits;
+- do not refactor unrelated CSS/components;
+- use browser-side JavaScript only for a real visible interaction or animation, such as accordions, tabs, carousels or navigation; keep it lean, accessible, performance-safe and separate from runtime/lead/deployment behavior;
+- prefer CSS for purely visual motion and honor reduced motion;
+- perform focused visual checks when tooling exists and all repository-required technical validation, then follow the existing finalization and Client Mode reporting rules.
+
+## 14. SEO, accessibility and performance work
+
+SEO, page speed, Core Web Vitals, accessibility and image/font/CSS/JS optimization are valid ordinary client requests. Make targeted site-facing markup, metadata, structured-data, asset, loading and presentation changes. Preserve the established design unless a visual change is requested, and preserve profile/indexing rules, accessibility, form behavior, routing, Keydiv Runtime, Cloudflare publishing and lead integration.
+
+Classify files by purpose, not extension. The protected-file boundary in `AGENTS.md` applies even to JavaScript or Astro files containing runtime integration. Do not modify infrastructure merely to improve a synthetic score; protected changes require an explicitly authorized developer/runtime task. Never trade accessibility, security, form correctness, route correctness or truthful content for a score.

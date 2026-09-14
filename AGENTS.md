@@ -21,7 +21,9 @@ Consult these guides before working on related tasks:
 - [Adding styles or using Tailwind](https://docs.astro.build/en/guides/styling/)
 - [Supporting multiple languages](https://docs.astro.build/en/guides/internationalization/)
 
-## Keydiv Astro Factory v4.7 project runtime
+## Keydiv Astro Factory v4.8 client editing instructions
+
+These repository-visible instructions incorporate Keydiv Astro Factory 4.8 and Keydiv UI Design 2.1 editing rules. They do not migrate Keydiv Runtime v1.0.0 or change the installed foundation metadata in `project.config.json`.
 
 This is an approved, completed commercial template. Project Upgrade is foundation-only: preserve the page design, content, layout, images, typography, colors, responsive behavior, animations, form fields and functionality. Do not redesign because runtime guidance changed. Read `project.config.json`, `DESIGN.md` and `docs/DISTRIBUTION.md` first.
 
@@ -59,11 +61,44 @@ This repository is a distributable template/product. Normal maintenance must be 
 
 - Agency copies are ordinary destination copies; no separate agency-specific factory/runtime is required.
 
+## Keydiv client-safe website editing boundary
+
+For ordinary client/team website requests, use Client Website Edit mode and make the **smallest correct diff**. Normal maintenance must work from these repository instructions without installing local skills.
+
+Allowed when required by the request:
+- website-facing Astro/HTML pages, components and layouts;
+- content, sections and pages, including creation, removal or reordering when requested;
+- CSS, responsive styles, colors, typography, spacing and visual states;
+- approved images, icons, favicons and other presentation assets;
+- approved business/site content configuration such as `src/config/site.ts`;
+- accessibility, SEO/content metadata and structured data consistent with the selected profile;
+- safe performance/Core Web Vitals improvements and image/font/CSS/JS optimization;
+- browser-side JavaScript used only for visible website interactions or animations, including accordions, tabs, carousels and navigation.
+
+Keep presentation JavaScript lean, accessible and performance-safe. Prefer CSS for purely visual motion and honor `prefers-reduced-motion`. Do not introduce hidden data collection, auth/session logic, private API calls, secrets or lead-routing behavior through presentation work. Visible form copy/layout may change only while preserving fields, validation, submission behavior and delivery.
+
+For ordinary client content/design/SEO/performance work, do not modify these protected files or systems unless explicitly required by an authorized developer/runtime task:
+- `AGENTS.md`, `README.md`, `docs/**`;
+- `project.config.json`, including `runtimeVersion` and factory/UI metadata;
+- `wrangler.json`, `wrangler.jsonc`, `publishing/**`, `.github/**`;
+- `qa/**` and infrastructure/bootstrap/migration/runtime scripts;
+- runtime mount/router implementation, including `src/utils/runtime-mount.mjs`;
+- Lead Service delivery/routing implementation, including `src/config/lead.ts` and `src/scripts/lead-form.ts`;
+- Service Bindings, private endpoints, secrets, `.env*`, credentials and automation/webhook configuration;
+- Cloudflare runtime/deployment configuration and publishing behavior;
+- dependency/framework configuration, including `package.json`, lockfiles, `.nvmrc`, `tsconfig.json` and `astro.config.*`.
+
+Classify files and code by **purpose, not extension**. A site-facing page can contain protected runtime integration; preserve that integration while editing the requested presentation. Reading an instruction file does not authorize modifying it.
+
+Requests to improve SEO, page speed, Core Web Vitals or accessibility, optimize images/fonts/CSS/JS, or fix LCP/CLS/INP are valid client work. Make targeted site-facing improvements while preserving the `private-demo` profile/indexing rules, accessibility, form behavior, routing, Keydiv Runtime, Cloudflare publishing and lead integration. Do not modify infrastructure merely to improve a synthetic score. If a protected change is necessary, it requires an explicitly authorized developer task; an optimization request alone does not authorize it.
+
+Touch only the implementation needed for the request. Do not opportunistically edit instructions, docs, QA, scripts or runtime metadata, upgrade dependencies, refactor unrelated CSS/components, or rewrite a whole page when a local change is sufficient. Run affected checks and all repository-required validation internally, then follow the existing safe Git/publishing workflow and exact Client Mode response contract.
+
 ## Keydiv UI/UX design runtime
 
 For meaningful page/section design or redesign tasks:
 - read `docs/KEYDIV-UI-DESIGN.md` before editing;
-- read and maintain `DESIGN.md` as the persistent project design source of truth;
+- read `DESIGN.md` as the persistent project design source of truth and update it only when a durable design-system decision genuinely changes;
 - classify the task as reference-led, directed, or auto art direction;
 - do not require a reference image: when none is supplied, choose a suitable premium art direction automatically;
 - when references are supplied, inspect and match their defining anatomy at the requested/inferred fidelity;
@@ -74,16 +109,22 @@ For meaningful page/section design or redesign tasks:
 - never invent factual business proof/claims;
 - after design work, continue to follow all existing repository validation, Git, profile, security, accessibility, and Publishing Service rules.
 
+For small visual changes, use **Small Visual Edit** behavior: read `docs/KEYDIV-UI-DESIGN.md` and `DESIGN.md`, preserve the current art direction, and make the smallest implementation diff. Do not rewrite `DESIGN.md` for a tiny edit or refactor unrelated CSS/components. Do not update `AGENTS.md` or `docs/**` during a normal client edit; a durable design decision permits updating `DESIGN.md` only, not protected instructions.
+
+Presentation JavaScript is allowed for a justified visible interaction or animation; keep it lean, accessible, performance-safe and separate from protected runtime, lead delivery and deployment behavior.
+
 
 ## Keydiv strict final-response contract
 
-Client Mode is the default for ordinary website edits: content/text, images, colors, FAQs, phone/email, sections, and basic layout/design. It also applies to Foundation Setup, Runtime Install, Runtime Repair, Destination Publishing, and Validation and Launch.
+Client Mode is the default for ordinary website edits: content/text, images, colors, FAQs, phone/email, sections, layout/design, presentation interactions/animations, SEO, accessibility, performance and optimization. It also applies to Foundation Setup, Runtime Install, Runtime Repair, Destination Publishing, and Validation and Launch.
 
 Run all required internal validation, audit, visual QA, Git synchronization, publishing, and live checks exactly as required. This rule changes user-facing output only, not validation requirements or deployment logic.
 
+This reporting rule does not authorize editing instruction files. Ordinary client edits must also follow the client-safe smallest-diff boundary above.
+
 ### Client Mode result
 
-When the requested task is complete and all required validation passes, return only:
+When the requested task is complete and all required validation passes, the assistant-written final response must be exactly:
 
 ```text
 ✅ Task completed and validated successfully.
