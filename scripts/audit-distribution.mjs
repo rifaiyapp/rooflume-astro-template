@@ -12,11 +12,13 @@ async function inspect(path, tracked=false) {
   if(!/\.(?:md|json|jsonc|mjs|js|ts|astro|css|sh|html|txt)$/.test(path) && !['_headers','.env.example'].some(name=>path.endsWith(name))) return;
   let content;
   try { content=await readFile(path,'utf8'); } catch(error) { if(error.code==='ENOENT') return; throw error; }
-  // The explicitly approved server-side binding is not a public operational URL.
+  // The approved server-side binding and its exact setup instruction are not public operational URLs.
   // Keep the existing prohibition everywhere else, including browser output.
   const operationalContent = path === 'wrangler.jsonc'
     ? content.replace(/\{\s*"binding":\s*"LEAD_GATEWAY",\s*"service":\s*"lead\x2dgateway"\s*\}/g, '')
-    : content;
+    : path === 'docs/CUSTOMER-SETUP.md'
+      ? content.replace(/^LEAD_GATEWAY -> lead\x2dgateway\r?$/gm, '')
+      : content;
   if(forbidden.test(operationalContent)) violations.push(`${path}: seller operational reference`);
   if(credential.test(content)) violations.push(`${path}: credential pattern`);
   if(localPath.test(content)) violations.push(`${path}: local machine path`);

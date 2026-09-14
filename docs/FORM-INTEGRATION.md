@@ -8,8 +8,8 @@ Copy .env.example to your ignored .env, or set these build-time variables in you
 
 ```dotenv
 PUBLIC_LEAD_MODE=live
-PUBLIC_LEAD_PROJECT_ID=your-project
-PUBLIC_LEAD_FORM_ID=your-form
+PUBLIC_LEAD_PROJECT_ID=<project-id>
+PUBLIC_LEAD_FORM_ID=hero-quote
 ```
 
 Set live mode and both identifiers, then rebuild. Blank identifiers fail closed with a call-us message. Omitting live mode keeps the non-sending demo. The browser resolves the same-origin endpoint from the LP's runtime pathname on submission: `/` uses `/api/lead`, while `/roofing` and `/roofing/` use `/roofing/api/lead`. Any mount depth works with the same compiled build; Astro's build base does not select the endpoint. The shared resolver in `src/utils/runtime-mount.mjs` captures the submission mount once for both the lead endpoint and the delayed thank-you redirect. API and thank-you suffixes resolve back to their owning mount. Query strings and fragments do not affect these destinations. `PUBLIC_LEAD_ENDPOINT` is no longer used.
@@ -19,6 +19,8 @@ Configuration is in src/config/lead.ts; behavior is in src/scripts/lead-form.ts.
 PUBLIC_* values are browser-visible: never put credentials, private webhooks, secret headers or authentication tokens in them. Any downstream secrets belong only in the Lead Service. [Astro environment variables](https://docs.astro.build/en/guides/environment-variables/) are compiled into the static build; variable changes require rebuilding.
 
 ## Request and response
+
+See [deployment configuration](CUSTOMER-SETUP.md#service-binding-and-production-build-variables) for the exact Service Binding and [runtime mounts](CUSTOMER-SETUP.md#runtime-mount-configuration) for root, nested and deep nested deployment. `RUNTIME_MOUNT_PATHS` is a Cloudflare Runtime Variable, not an Astro `PUBLIC_*` build variable; root remains available automatically.
 
 The JSON POST contains project_id, form_id, fields, metadata, submit_elapsed_ms and honeypot. The existing meta and website aliases are preserved, including meta.submit_elapsed_ms. Fields include name, phone, email, zip and message. Additional named controls are included; repeated names become arrays. The website honeypot control stays separate from fields and populates both honeypot and website. Metadata contains page URL, referrer and the five UTM parameters. The Worker validates a JSON object and forwards the original body unchanged so server-side field validation and spam checks remain owned by the Lead Service. Avoid sensitive URL data and implement your privacy/consent requirements before collecting production requests.
 

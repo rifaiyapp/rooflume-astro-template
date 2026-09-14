@@ -2,7 +2,7 @@
 
 Rooflume is a premium responsive roofing/restoration landing-page template by KEYDIV, with local imagery, self-hosted fonts, mobile navigation, testimonial carousel, accessible FAQ and inspection form. Rooflume is a fictional demo brand; replace demo business claims with verified customer content before launch.
 
-This product carries its own v4.7 runtime. Use your own GitHub, Codex Cloud and Cloudflare accounts without installing the author's local factory skill.
+This product carries Keydiv Runtime v1.0.0, the current stable baseline, with factoryVersion 4.7 and uiRuntimeVersion 2 tracked separately in project.config.json. Use your own GitHub, Codex Cloud and Cloudflare accounts without installing the author's local factory skill.
 
 **The form is non-sending by default.** It validates the existing fields and clearly reports that no request was sent. Configure your own service before collecting leads.
 
@@ -31,6 +31,7 @@ Output is dist. Browser QA uses npm run qa:form and npm run qa:runtime; install 
 - [Codex Cloud setup](docs/CODEX-CLOUD-SETUP.md): your repository/environment and scoped CODEX_GITHUB_TOKEN.
 - [Form integration](docs/FORM-INTEGRATION.md): demo/live modes and customer service contract.
 - [Customer setup](docs/CUSTOMER-SETUP.md): your Cloudflare account, domain and launch profile.
+- [Framework upgrade policy](docs/CUSTOMER-SETUP.md#framework-upgrade-policy): preserve the stable runtime and verify upgrades on a branch.
 - [Distribution boundary](docs/DISTRIBUTION.md): current-source export, historical settings and licensing.
 
 DESIGN.md records the approved appearance. Codex follows AGENTS.md and docs/KEYDIV-UI-DESIGN.md. Static Astro, plain CSS and minimal scripts keep the template portable; no backend or tracking is bundled.
