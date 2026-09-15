@@ -21,9 +21,9 @@ Consult these guides before working on related tasks:
 - [Adding styles or using Tailwind](https://docs.astro.build/en/guides/styling/)
 - [Supporting multiple languages](https://docs.astro.build/en/guides/internationalization/)
 
-## Keydiv Astro Factory v4.8 client editing instructions
+## Keydiv Astro Factory v4.9 client editing instructions
 
-These repository-visible instructions incorporate Keydiv Astro Factory 4.8 and Keydiv UI Design 2.1 editing rules. They do not migrate Keydiv Runtime v1.0.0 or change the installed foundation metadata in `project.config.json`.
+These repository-visible instructions incorporate Keydiv Astro Factory 4.9 cloud publishing and Keydiv UI Design 2.1 editing rules. They do not migrate Keydiv Runtime v1.0.0 or change the installed foundation metadata in `project.config.json`.
 
 This is an approved, completed commercial template. Project Upgrade is foundation-only: preserve the page design, content, layout, images, typography, colors, responsive behavior, animations, form fields and functionality. Do not redesign because runtime guidance changed. Read `project.config.json`, `DESIGN.md` and `docs/DISTRIBUTION.md` first.
 
@@ -43,9 +43,26 @@ This is an approved, completed commercial template. Project Upgrade is foundatio
 2. Install with `npm ci` when needed; run `npm run validate`, `npm audit`, `npm run audit:distribution`, `npm run qa:cloud`, `git diff --check`, and scan the intended diff for secrets, private configuration leakage, starter contamination and unintended files. Do not suppress failed checks or use force audit fixes.
 3. Run `npm run qa:form` and `npm run qa:runtime` for changes affecting runtime/page behavior. Render desktop/mobile and inspect screenshots when available; never claim visual QA without rendering. `QA_BASELINE` may point to a pre-change build for pixel comparison.
 4. Commit only intended validated changes, then fetch latest main again. Preserve newer remote work. Rebase only task commits if needed, resolve only unambiguous conflicts, and rerun relevant validation/audit after reconciliation.
-5. When write authentication and repository policy permit, safely push `git push origin HEAD:main`. Routine work does not stop at a local commit or prepared pull request. A pull request is used only if explicitly requested or required by policy. Never force-push, overwrite newer work or publish failed validation.
+5. After committing, run `bash scripts/codex-cloud-publish.sh` to fetch latest main, require safe ancestry, push `HEAD:main` with authentication, fetch again and verify the task commit is contained by remote main. If main advanced/diverged, safely reconcile only task commits, rerun relevant checks and retry. Routine work does not stop at a local commit or prepared pull request. A pull request is used only if explicitly requested or required by policy. Never force-push, overwrite newer work or publish failed validation. Failed authentication, push or remote verification forbids a success response.
 6. Prefer actual local origin, then the approved origin persisted by this environment. Only if no origin is available use `CODEX_GITHUB_REPOSITORY=owner/repository`. Never infer an owner or use a seller/agency fallback. A clone still pointing to its source must be rebound to the buyer repository before write-enabled setup. Never change the master remote as part of copy setup.
 7. Publishing Service uses the existing static configuration and `dist`. Perform bounded live verification at the intended domain when available, including route status, noindex and security headers. Report results using the Client Mode contract below.
+
+## Keydiv Codex Cloud verified publishing
+
+For ordinary authorized code-changing Client Mode tasks, the normal completion path is:
+
+`edit -> validate -> inspect intended diff -> commit -> fetch/reconcile main -> authenticated push -> remote verification -> success response`
+
+Use the repository's canonical `scripts/codex-cloud-publish.sh` after committing only the intended validated changes. Do not stop at a local `work` branch commit or prepared pull request when direct publishing is authorized.
+
+- Keep `origin` clean (`https://github.com/owner/repository.git`); never embed credentials in the remote URL.
+- Authentication is supplied by the ephemeral Codex Cloud credential helper configured from `CODEX_GITHUB_TOKEN`.
+- Cloud setup secrets are removed before the agent phase. Setup hands the repository-scoped credential to a restricted file outside the repository in the privileged ephemeral environment; maintenance reasserts the helper and reuses that handoff when the secret is absent. Never print credential-helper output, enable credential tracing, or copy credential files into the repository. Missing authentication must fail safely. See `docs/CODEX-CLOUD-SETUP.md`.
+- Never force-push or overwrite newer remote work.
+- If remote `main` advanced/diverged, fetch and safely reconcile only the task commit(s), rerun relevant validation, then retry. Stop on ambiguous conflicts.
+- After push, verify the task commit is contained by remote `main`.
+- Do not return the Client Mode success response until remote verification succeeds.
+- If edit/validation succeeds but publication fails, use the short publishing-issue response from the strict final-response contract.
 
 ## Customer-portable template runtime
 
@@ -124,10 +141,19 @@ This reporting rule does not authorize editing instruction files. Ordinary clien
 
 ### Client Mode result
 
-When the requested task is complete and all required validation passes, the assistant-written final response must be exactly:
+For a code-changing Client Mode task, success is allowed only after the requested edit, required validation, intended commit, safe push to main, and remote verification all succeed. A local workspace edit or local commit is not publication.
+
+When the requested task is complete, all required validation passes, and required Git publication is remotely verified, the assistant-written final response must be exactly:
 
 ```text
 ✅ Task completed and validated successfully.
+```
+
+If the edit/validation succeeds but Git publication fails, return only:
+
+```text
+⚠️ Task completed, but publishing found an issue:
+[short plain-language explanation]
 ```
 
 For a real validation issue after completing the requested change, return only:
