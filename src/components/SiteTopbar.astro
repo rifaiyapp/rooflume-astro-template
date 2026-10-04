@@ -5,13 +5,11 @@ import ResponsiveImage from './ResponsiveImage.astro';
 interface Props {
   homeHref?: string;
   ctaHref?: string;
-  showMenuToggle?: boolean;
 }
 
 const {
   homeHref = '/',
   ctaHref = '/#callback',
-  showMenuToggle = false,
 } = Astro.props;
 ---
 
@@ -31,9 +29,4 @@ const {
     <span class="phone-copy"><small>Book Same-Day Service</small><strong>Call {site.phone.display}</strong></span>
   </a>
   <a class="button button-gold header-cta" href={ctaHref}>{site.primaryCta}</a>
-  {showMenuToggle && (
-    <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Open menu">
-      <i class="ph ph-list" aria-hidden="true"></i>
-    </button>
-  )}
 </div>
