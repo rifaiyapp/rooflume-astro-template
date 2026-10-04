@@ -1,0 +1,39 @@
+---
+import { site } from '../config/site';
+import ResponsiveImage from './ResponsiveImage.astro';
+
+interface Props {
+  homeHref?: string;
+  ctaHref?: string;
+  showMenuToggle?: boolean;
+}
+
+const {
+  homeHref = '/',
+  ctaHref = '/#callback',
+  showMenuToggle = false,
+} = Astro.props;
+---
+
+<div class="topbar shell">
+  <a class="brand" href={homeHref} aria-label={`${site.name} home`}>
+    <ResponsiveImage
+      src={site.logo.src}
+      alt={site.logo.alt}
+      width="430"
+      height="161"
+      loading="eager"
+      sizes="(max-width: 520px) 185px, (max-width: 820px) 205px, 285px"
+    />
+  </a>
+  <a class="phone-lockup header-phone" href={site.phone.href} aria-label={`Call ${site.name} at ${site.phone.display}`}>
+    <span class="phone-icon"><i class="ph-fill ph-phone-call" aria-hidden="true"></i></span>
+    <span class="phone-copy"><small>Book Same-Day Service</small><strong>Call {site.phone.display}</strong></span>
+  </a>
+  <a class="button button-gold header-cta" href={ctaHref}>{site.primaryCta}</a>
+  {showMenuToggle && (
+    <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Open menu">
+      <i class="ph ph-list" aria-hidden="true"></i>
+    </button>
+  )}
+</div>
