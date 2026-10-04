@@ -1,0 +1,37 @@
+---
+import LegalLayout from '../layouts/LegalLayout.astro';
+import { site } from '../config/site';
+---
+
+<LegalLayout
+  title="Cookie Policy"
+  heading="Cookie Policy"
+  description={`Cookie and similar-technology information for the ${site.name} website template.`}
+>
+  <h2>Default template behavior</h2>
+  <p>The Rooflume demonstration template does not intentionally set advertising, behavioral-profiling, or analytics cookies by default. Core hosting and security infrastructure may still process request information needed to deliver and protect the website.</p>
+
+  <h2>What may change on a production site</h2>
+  <p>A buyer may later add analytics, advertising pixels, embedded media, maps, chat, scheduling, payment, CRM, call-tracking, or other services that use cookies, local storage, pixels, or similar technologies. If those tools are enabled, the production business should update this policy and implement any notice, preference, or consent mechanism required by applicable law.</p>
+
+  <h2>Categories commonly used</h2>
+  <h3>Strictly necessary technologies</h3>
+  <p>These support essential functions such as security, routing, load balancing, abuse prevention, and user-requested features.</p>
+
+  <h3>Analytics technologies</h3>
+  <p>These can help a site owner understand traffic and performance. They are not enabled by this base template and should be documented if added.</p>
+
+  <h3>Advertising and marketing technologies</h3>
+  <p>These may measure campaigns, build audiences, or personalize advertising. They are not enabled by this base template and should not be added without the appropriate disclosures and controls.</p>
+
+  <h3>Functional third-party technologies</h3>
+  <p>Embedded scheduling, chat, video, maps, payment, or review tools may store or read information on a visitor's device. Their behavior depends on the provider and configuration chosen by the website owner.</p>
+
+  <h2>Managing cookies</h2>
+  <p>Most browsers allow users to review, block, or delete cookies. Blocking strictly necessary technologies can affect website functionality. A production site that uses optional cookies should provide any additional controls required for its audience and jurisdiction.</p>
+
+  <h2>Contact</h2>
+  <p>Questions about the cookie practices of a production version should be sent to the real business contact shown on that website. For this demonstration, contact <a href={`mailto:${site.legal.privacyEmail}`}>{site.legal.privacyEmail}</a>.</p>
+
+  <p class="legal-note"><strong>Template notice:</strong> re-check this policy whenever analytics, advertising, embeds, consent tools, or other third-party scripts are added or changed.</p>
+</LegalLayout>
