@@ -54,6 +54,8 @@ export function connectLeadForm(form: HTMLFormElement) {
       const values = data.getAll(key);
       fields[key] = values.length === 1 ? values[0] : values;
     }
+    fields.form_source = 'homepage-roof-inspection';
+
     const params = new URLSearchParams(window.location.search);
     const submitElapsedMs = Math.round(performance.now() - connectedAt);
     const metadata = {
@@ -63,6 +65,11 @@ export function connectLeadForm(form: HTMLFormElement) {
       utm_campaign: params.get('utm_campaign') || '',
       utm_term: params.get('utm_term') || '',
       utm_content: params.get('utm_content') || '',
+      gclid: params.get('gclid') || '',
+      gbraid: params.get('gbraid') || '',
+      wbraid: params.get('wbraid') || '',
+      fbclid: params.get('fbclid') || '',
+      msclkid: params.get('msclkid') || '',
       referrer: document.referrer,
       submit_elapsed_ms: submitElapsedMs,
     };
