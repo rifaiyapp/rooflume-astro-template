@@ -1,0 +1,86 @@
+---
+import { site } from '../config/site';
+import Layout from './Layout.astro';
+import ResponsiveImage from '../components/ResponsiveImage.astro';
+
+interface Props {
+  title: string;
+  description: string;
+  heading: string;
+}
+
+const { title, description, heading } = Astro.props;
+---
+
+<Layout title={`${title} | ${site.name}`} description={description}>
+  <header class="legal-header">
+    <div class="legal-shell legal-header-inner">
+      <a class="legal-brand" href="/" aria-label={`${site.name} home`}>
+        <ResponsiveImage src={site.logo.src} alt={site.logo.alt} width="430" height="161" sizes="220px" loading="eager" />
+      </a>
+      <a class="legal-phone" href={site.phone.href}>Call {site.phone.display}</a>
+    </div>
+  </header>
+
+  <main id="main-content" class="legal-main">
+    <div class="legal-shell">
+      <nav class="legal-breadcrumb" aria-label="Breadcrumb"><a href="/">Home</a><span aria-hidden="true">/</span><span>{heading}</span></nav>
+      <article class="legal-card">
+        <header class="legal-title">
+          <p>Website information</p>
+          <h1>{heading}</h1>
+          <span>Last updated: {site.legal.updated}</span>
+        </header>
+        <div class="legal-copy"><slot /></div>
+      </article>
+    </div>
+  </main>
+
+  <footer class="legal-footer">
+    <div class="legal-shell legal-footer-inner">
+      <p>&copy; 2026 {site.name}. Fictional demonstration brand. Replace demo legal/contact details before a client launch.</p>
+      <nav aria-label="Legal navigation">
+        <a href="/privacy/">Privacy</a>
+        <a href="/terms/">Terms</a>
+        <a href="/accessibility/">Accessibility</a>
+        <a href="/cookies/">Cookies</a>
+      </nav>
+    </div>
+  </footer>
+
+  <style>
+    .legal-shell { width: min(960px, calc(100% - 40px)); margin-inline: auto; }
+    .legal-header { background: #061f49; color: #fff; }
+    .legal-header-inner { display: flex; min-height: 92px; align-items: center; justify-content: space-between; gap: 1.5rem; }
+    .legal-brand { display: block; width: 220px; max-width: 55vw; }
+    .legal-brand img { width: 100%; height: auto; object-fit: contain; mix-blend-mode: screen; }
+    .legal-phone { color: #ffc248; font-weight: 800; text-decoration: none; }
+    .legal-main { min-height: 70vh; padding: 3rem 0 4.5rem; background: #f2f1ef; }
+    .legal-breadcrumb { display: flex; flex-wrap: wrap; gap: .55rem; margin-bottom: 1.2rem; color: #60708a; font-size: .9rem; }
+    .legal-breadcrumb a { color: #061f49; font-weight: 800; text-decoration: none; }
+    .legal-card { overflow: hidden; border-radius: 8px; background: #fff; box-shadow: 0 16px 40px rgba(4,25,54,.10); }
+    .legal-title { padding: 2.5rem clamp(1.4rem, 5vw, 3.5rem); border-bottom: 4px solid #ff6a00; background: #061f49; color: #fff; }
+    .legal-title p { color: #ffc248; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+    .legal-title h1 { margin-top: .45rem; color: #fff; font-size: clamp(2.35rem, 6vw, 4.4rem); }
+    .legal-title span { display: block; margin-top: 1rem; color: #d6ddea; font-size: .88rem; }
+    .legal-copy { padding: clamp(1.5rem, 5vw, 3.5rem); color: #344258; }
+    .legal-copy :global(h2) { margin: 2.2rem 0 .75rem; color: #061f49; font-size: clamp(1.5rem, 3vw, 2rem); line-height: 1.1; text-transform: none; }
+    .legal-copy :global(h2:first-child) { margin-top: 0; }
+    .legal-copy :global(h3) { margin: 1.45rem 0 .45rem; color: #061f49; font-size: 1.05rem; line-height: 1.25; text-transform: none; }
+    .legal-copy :global(p), .legal-copy :global(li) { line-height: 1.75; }
+    .legal-copy :global(p + p) { margin-top: .9rem; }
+    .legal-copy :global(ul) { display: grid; gap: .5rem; padding-left: 1.3rem; }
+    .legal-copy :global(a) { color: #a94300; font-weight: 800; }
+    .legal-copy :global(.legal-note) { margin-top: 2rem; padding: 1rem 1.1rem; border-left: 4px solid #ff6a00; background: #fff7ef; color: #4c3b2c; }
+    .legal-footer { padding: 1.5rem 0; background: #031936; color: #d6ddea; }
+    .legal-footer-inner { display: flex; align-items: center; justify-content: space-between; gap: 1rem 2rem; }
+    .legal-footer p { max-width: 590px; font-size: .8rem; }
+    .legal-footer nav { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .8rem 1rem; }
+    .legal-footer a { color: #ffc248; font-size: .82rem; text-decoration: none; }
+    @media (max-width: 680px) {
+      .legal-header-inner, .legal-footer-inner { align-items: flex-start; flex-direction: column; }
+      .legal-header-inner { justify-content: center; padding-block: 1rem; }
+      .legal-footer nav { justify-content: flex-start; }
+    }
+  </style>
+</Layout>
