@@ -1,5 +1,4 @@
-import { leadConfig, hasLiveLeadService } from '../config/lead';
-import { site } from '../config/site';
+import { leadConfig, hasLeadService } from '../config/lead';
 import { resolveRuntimeMount } from '../utils/runtime-mount.mjs';
 
 export function connectLeadForm(form: HTMLFormElement) {
@@ -38,15 +37,16 @@ export function connectLeadForm(form: HTMLFormElement) {
       return;
     }
 
-    if (!hasLiveLeadService()) {
-      status.textContent = leadConfig.mode === 'demo'
-        ? 'Demo only. Your request was not sent.'
-        : 'Online requests are not configured. Please call us.';
+    if (!hasLeadService()) {
+      status.textContent = 'Online requests are not configured.';
       return;
     }
 
-    // Capture the submission's mount once, including across the delayed redirect.
-    const mountBase = resolveRuntimeMount(window.location.pathname);
+    // Capture the deployment mount once, including across the delayed redirect.
+    // Root multipage routes such as /contact/ are page paths, not mount paths.
+    // Nested Worker responses inject data-runtime-mount on <html>; root deployment defaults to /.
+    const runtimeMount = document.documentElement.dataset.runtimeMount || '/';
+    const mountBase = resolveRuntimeMount(runtimeMount);
     const data = new FormData(form);
     // Read every successful named control; preserve repeated names as arrays.
     const fields: Record<string, FormDataEntryValue | FormDataEntryValue[]> = Object.create(null);
@@ -103,9 +103,9 @@ export function connectLeadForm(form: HTMLFormElement) {
       if (result?.success !== true) throw new Error('Submission failed');
       submitted = true;
       const name = String(fields.name || '').trim().split(' ')[0] || 'there';
-      status.textContent = `Thanks, ${name}! A ${site.name} roofing specialist will call you shortly.`;
+      status.textContent = `Thanks, ${name}! Your request was accepted.`;
       form.reset();
-      form.dispatchEvent(new CustomEvent('rooflume:lead-submitted', { detail: fields, bubbles: true }));
+      form.dispatchEvent(new CustomEvent('lead:submitted', { bubbles: true }));
 
       window.setTimeout(() => {
         window.location.href = `${mountBase}thank-you/`;
