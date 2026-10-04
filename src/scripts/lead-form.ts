@@ -51,13 +51,11 @@ export function connectLeadForm(form: HTMLFormElement) {
     // Read every successful named control; preserve repeated names as arrays.
     const fields: Record<string, FormDataEntryValue | FormDataEntryValue[]> = Object.create(null);
     for (const key of new Set(data.keys())) {
-      if (key === 'website') continue;
       const values = data.getAll(key);
       fields[key] = values.length === 1 ? values[0] : values;
     }
     const params = new URLSearchParams(window.location.search);
     const submitElapsedMs = Math.round(performance.now() - connectedAt);
-    const honeypot = String(data.get('website') || '');
     const metadata = {
       page_url: window.location.href,
       utm_source: params.get('utm_source') || '',
@@ -74,10 +72,8 @@ export function connectLeadForm(form: HTMLFormElement) {
       fields,
       metadata,
       submit_elapsed_ms: submitElapsedMs,
-      honeypot,
-      // Retain the existing aliases for consumers of the original payload.
+      // Retain the original metadata alias for downstream consumers.
       meta: metadata,
-      website: honeypot,
     };
     const originalText = button.textContent;
     submitting = true;
