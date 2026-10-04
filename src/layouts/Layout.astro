@@ -83,7 +83,7 @@ const structuredData = schema ?? defaultSchema;
     <meta name="twitter:image" content={socialImage} />
 
     <title>{title}</title>
-    <script type="application/ld+json" set:html={JSON.stringify(structuredData)} />
+    <script type="application/ld+json" set:html={JSON.stringify(structuredData)}></script>
   </head>
   <body>
     <a class="skip-link" href="#main-content">Skip to main content</a>
