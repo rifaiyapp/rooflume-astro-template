@@ -1,0 +1,36 @@
+---
+import LegalLayout from '../layouts/LegalLayout.astro';
+import { site } from '../config/site';
+---
+
+<LegalLayout
+  title="Accessibility Statement"
+  heading="Accessibility Statement"
+  description={`${site.name} accessibility information and ways to report barriers on the website.`}
+>
+  <h2>Our approach</h2>
+  <p>This template is designed to provide a clear, keyboard-friendly, responsive experience and to support common assistive technologies. Accessibility is an ongoing responsibility, especially when a buyer replaces content, colors, forms, media, plugins, or third-party services.</p>
+
+  <h2>Features included in the template</h2>
+  <ul>
+    <li>Semantic headings, landmarks, labels, and descriptive link or control names.</li>
+    <li>A skip link for keyboard users.</li>
+    <li>Visible keyboard focus styles.</li>
+    <li>Form labels, validation feedback, and an accessible status region.</li>
+    <li>Keyboard-operable navigation, FAQ controls, and testimonial carousel controls.</li>
+    <li>Alternative text for meaningful images and empty alternative text for decorative imagery.</li>
+    <li>Support for reduced-motion preferences where animated carousel behavior is used.</li>
+    <li>Responsive layouts designed for mobile, tablet, zoomed, and desktop use.</li>
+  </ul>
+
+  <h2>Third-party content</h2>
+  <p>Third-party tools added by a production website owner—such as chat widgets, scheduling tools, map embeds, review widgets, payment services, or analytics interfaces—may have their own accessibility characteristics. The owner should test those integrations before launch.</p>
+
+  <h2>Feedback and assistance</h2>
+  <p>If you have difficulty using a production version of this website, contact the business using the published telephone or email details and describe the page, feature, and barrier you encountered. The business should provide a reasonable alternative method for receiving the same information or completing the same task where practical.</p>
+
+  <h2>Ongoing review</h2>
+  <p>Accessibility should be checked after significant design, content, navigation, form, or third-party integration changes. Automated testing can identify many issues, but manual keyboard, zoom, screen-reader, and real-device checks remain important.</p>
+
+  <p class="legal-note"><strong>Template notice:</strong> this statement describes the accessibility intent of the supplied template. The production owner remains responsible for the final website, content, integrations, and any accessibility obligations that apply to the business.</p>
+</LegalLayout>
