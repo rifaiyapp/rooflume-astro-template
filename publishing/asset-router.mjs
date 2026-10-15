@@ -1,4 +1,5 @@
 import { resolveRuntimeMount } from "../src/utils/runtime-mount.mjs";
+import { leadIdentity } from "../src/config/lead-worker.mjs";
 
 const REVALIDATE = "public, max-age=0, must-revalidate";
 const MAX_LEAD_BYTES = 32 * 1024;
@@ -75,11 +76,12 @@ async function submitLead(request, env, url) {
   } catch (error) {
     return leadResponse(error instanceof RangeError ? 413 : 400);
   }
-  // Public identifiers come from the build-time form configuration. The Lead
-  // Service owns project/form/origin authorization; identifiers are not secrets.
+  // Enforce this website\'s build-time identity before consulting private Gateway KV routes.
+  // Browser-provided IDs cannot select another website\'s delivery configuration.
   const payload = JSON.parse(body);
   if (![payload.project_id, payload.form_id].every(id => typeof id === "string" && id.trim()) ||
       typeof env.LEAD_GATEWAY?.fetch !== "function") return leadResponse(503);
+  if (payload.project_id !== leadIdentity.projectId || payload.form_id !== leadIdentity.formId) return leadResponse(403);
 
   try {
     const headers = new Headers({ "Content-Type": "application/json", Accept: "application/json" });
